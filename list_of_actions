@@ -1,0 +1,37 @@
+client:                    [action]             [byte]
+   set name                [name]               [*char]              0
+   fold                    -                                         1
+   raise                   [amount]             [short]              2
+   call                    -                                         3
+   check                   -                                         4
+   allin                   -                                         5
+   bail                    -                                         6
+
+server:                    [action]             [byte]
+   playercount             [count]              [byte]               10
+   new player              [seat][name]         [byte][*char]        11
+   assign seat             [seat]               [byte]               12
+   player eliminated       [seat]               [byte]               13
+   player left             [seat]               [byte]               14
+   set starting money      [amount]             [short]              15
+   set blinds              [small][big]         [short][short]       20
+   you are dealer          -                                         21
+   you are small blind     -                                         22
+   you are big blind       -                                         23
+   deal hole cards         [card][card]         [byte][byte]         30
+   reveal flop             [card][card][card]   [byte][byte][byte]   31
+   reveal river            [card]               [byte]               32
+   reveal turn             [card]               [byte]               33
+   request action          -                                         40
+   player folded           [seat]               [byte]               41
+   player raised           [seat][amount]       [byte][short]        42
+   player called           [seat]               [byte]               43
+   player checked          [seat]               [byte]               44
+   player allin            [seat][amount]       [byte][short]        45
+   winning hand            [index]              [short?]             50
+   tie                     -                                         51
+   player won              [seat][amount]       [byte][short]        52
+   action is fine          -                                         0
+   error unknown action    -                                         1
+   error illegal action    -                                         2
+   error bet too low       -                                         3
