@@ -1,8 +1,0 @@
-GIT!!!
-implement virtual function for all events (client)
-write read function (server)
-game loop
-   betting round (function?!)
-hand evaluator
-
-use /dev/random
