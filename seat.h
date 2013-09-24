@@ -5,13 +5,19 @@ class seat {
 public:
    seat();
 
-   seat(int chips);
+   seat(int8_t n, int chips);
 
    int newRound();
 
-   int dealHoleCard(int n, int16_t card);
+   int dealHoleCard(int n, int8_t card);
 
-   int16_t getHoleCard(int n) { return holeCard[n]; };
+   int8_t getHoleCard(int n) { return holeCard[n]; };
+
+   int8_t getNumber() { return seatNumber; };
+
+   int getRemainingChips() { return remainingChips; };
+
+   int getCurrentBet() { return currentBet; };
 
    int bets(int n);
 
@@ -21,10 +27,24 @@ public:
 
    bool hasFolded();
 
+   int setFD(int n) { fd = n; };
+
+   int getFD() { return fd; };
+
+   int setName(unsigned char *_name) { name = _name; };
+
+   unsigned char* getName() { return name; };
+
    ~seat();
 
 private:
-   int16_t holeCard[2];
+   unsigned char *name;
+
+   int8_t seatNumber;
+
+   int fd;
+
+   int8_t holeCard[2];
 
    int currentBet;
 

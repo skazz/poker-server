@@ -20,19 +20,15 @@ private:
 
    int sendAll(int fd, unsigned char *msg, int msg_len);
 
-   int broadcast(int *fd, int count, unsigned char *msg, int msg_len);
+   int broadcast(unsigned char *msg, int msg_len);
 
-   int read(unsigned char *buf);
+   int eliminate(int8_t n);
 
    int gameLoop();
 
    const char *port;
 
-   int playerCount;
-
-   int client[8];
-
    seat player[8];
 
-   int startingChips, smallBlind, bigBlind, playersLeft;
+   int startingChips, smallBlind, bigBlind, playersLeft, playerCount;
 };

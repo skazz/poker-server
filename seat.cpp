@@ -2,11 +2,12 @@
 
 seat::seat() {};
 
-seat::seat(int chips) {
+seat::seat(int8_t n, int chips) {
+   seatNumber = n;
    remainingChips = chips;
 }
 
-int seat::dealHoleCard(int n, int16_t card) {
+int seat::dealHoleCard(int n, int8_t card) {
    holeCard[n] = card;
 }
 

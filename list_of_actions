@@ -15,9 +15,9 @@ server:                    [action]             [byte]
    player left             [seat]               [byte]               14
    set starting money      [amount]             [short]              15
    set blinds              [small][big]         [short][short]       20
-   you are dealer          -                                         21
-   you are small blind     -                                         22
-   you are big blind       -                                         23
+   is dealer               [seat]               [short]              21
+   is small blind          [seat]               [short]              22
+   is big blind            [seat]               [short]              23
    deal hole cards         [card][card]         [byte][byte]         30
    reveal flop             [card][card][card]   [byte][byte][byte]   31
    reveal river            [card]               [byte]               32

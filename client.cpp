@@ -130,7 +130,7 @@ int client::read(unsigned char *buf) {
       return 0;
    case 31:
       unpack(p, "bbb", &a, &b, &c);
-      fprintf(stdout, "Flop: % "PRId8" %"PRId8" %"PRId8"\n", a, b, c);
+      fprintf(stdout, "Flop : %"PRId8" %"PRId8" %"PRId8"\n", a, b, c);
       return 0;
    case 32:
       unpack(p, "b", &a);
@@ -138,16 +138,19 @@ int client::read(unsigned char *buf) {
       return 0;
    case 33:
       unpack(p, "b", &a);
-      fprintf(stdout, "Turn: %"PRId8"\n", a);
+      fprintf(stdout, "Turn : %"PRId8"\n", a);
       return 0;
    case 21:
-      fprintf(stdout, "You are dealer\n");
+      unpack(p, "b", &a);
+      fprintf(stdout, "Player %"PRId8" is dealer\n");
       return 0;
    case 22:
-      fprintf(stdout, "You are small blind\n");
+      unpack(p, "b", &a);
+      fprintf(stdout, "Player %"PRId8" is small blind\n");
       return 0;
    case 23:
-      fprintf(stdout, "You are big blind\n");
+      unpack(p, "b", &a);
+      fprintf(stdout, "Player %"PRId8" is big blind\n");
       return 0;
    case 20:
       unpack(p, "hh", &d, &f);
