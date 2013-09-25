@@ -15,7 +15,7 @@ protected:
 
 void dummyClient::placeBet() {
    fprintf(stdout, "Your turn\n");
-   fold();
+   check();
 }
 
 

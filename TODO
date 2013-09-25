@@ -1,12 +1,15 @@
+game loop
+   fix negative bet when allin
+   hand evaluator
+
 implement virtual function for all events (client)
    just notifiy about changes? (single function)
 
-write read function (server)
 
-game loop
-   betting round (function?!)
-
-hand evaluator
+read function
+   add timeout
+   check sanity
+   own buffer per seat?
 
 
 use /dev/random

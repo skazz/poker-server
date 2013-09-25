@@ -24,12 +24,18 @@ int seat::folds() {
    folded = true;
 }
 
+int seat::allin() {
+   bets(remainingChips);
+   allined = true;
+}
+
 bool seat::hasFolded() {
    return folded;
 }
 
 int seat::newRound() {
    folded = false;
+   allined = false;
    currentBet = 0;
 }
 

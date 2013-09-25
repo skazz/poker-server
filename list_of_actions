@@ -20,8 +20,8 @@ server:                    [action]             [byte]
    is big blind            [seat]               [short]              23
    deal hole cards         [card][card]         [byte][byte]         30
    reveal flop             [card][card][card]   [byte][byte][byte]   31
-   reveal river            [card]               [byte]               32
-   reveal turn             [card]               [byte]               33
+   reveal turn             [card]               [byte]               32
+   reveal river            [card]               [byte]               33
    request action          -                                         40
    player folded           [seat]               [byte]               41
    player raised           [seat][amount]       [byte][short]        42

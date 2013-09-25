@@ -134,11 +134,11 @@ int client::read(unsigned char *buf) {
       return 0;
    case 32:
       unpack(p, "b", &a);
-      fprintf(stdout, "River: %"PRId8"\n", a);
+      fprintf(stdout, "Turn : %"PRId8"\n", a);
       return 0;
    case 33:
       unpack(p, "b", &a);
-      fprintf(stdout, "Turn : %"PRId8"\n", a);
+      fprintf(stdout, "River: %"PRId8"\n", a);
       return 0;
    case 21:
       unpack(p, "b", &a);

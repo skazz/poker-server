@@ -25,7 +25,11 @@ public:
 
    int folds();
 
+   int allin();
+
    bool hasFolded();
+
+   bool isAllin() { return allined; };
 
    int setFD(int n) { fd = n; };
 
@@ -50,6 +54,6 @@ private:
 
    int remainingChips;
 
-   bool folded;
+   bool folded, allined;
 
 };
