@@ -3,6 +3,9 @@
 using namespace std;
 
 server::server(const char *port, int playerCount) {
+   time_t seconds;
+   time(&seconds);
+   srand((unsigned int) seconds);
 
    this->port = port;
    this->playerCount = playerCount;
@@ -174,7 +177,7 @@ int server::gameLoop() {
    unsigned char msg[16];
    int msg_len;
 
-   int dealer = 0; // rng
+   int dealer = rand() % playerCount; // rng
    bool blindsChanged = true;
 
    deckC deck;
@@ -209,19 +212,28 @@ int server::gameLoop() {
       if(broadcast(msg, msg_len) == -1)
          fprintf(stderr, "error broadcasting dealer");
 
+
+      // small blind(check if enough chips)
       msg_len = pack(msg, "bb", 22, player[(dealer + 1) % playersLeft].getNumber());
       if(broadcast(msg, msg_len) == -1)
          fprintf(stderr, "error broadcasting small blind");
 
-      // small blind(check if enough chips)
-      player[(dealer + 1) % playersLeft].bets(smallBlind);
-
-      msg_len = pack(msg, "bb", 23, player[(dealer + 2) % playersLeft].getNumber());
-      if(broadcast(msg, msg_len) == -1)
-         fprintf(stderr, "error broadcasting big blind");
+      if(player[(dealer + 1) % playersLeft].getRemainingChips() <= smallBlind) {
+         playerAllin((dealer + 1) % playersLeft);
+      } else {
+         player[(dealer + 1) % playersLeft].bets(smallBlind);
+      }
 
       // big blind(check if enough chips)
-      player[(dealer + 2) % playersLeft].bets(bigBlind);
+      msg_len = pack(msg, "bb", 23, player[(dealer + 2) % playersLeft].getNumber());
+      if(broadcast(msg, msg_len) == -1)
+            fprintf(stderr, "error broadcasting big blind");
+
+      if(player[(dealer + 2) % playersLeft].getRemainingChips() <= bigBlind) {
+         playerAllin((dealer + 2) % playersLeft);
+      } else {
+         player[(dealer + 2) % playersLeft].bets(bigBlind);
+      }
 
 
       minimumBet = bigBlind;
@@ -291,15 +303,16 @@ int server::gameLoop() {
 
       // eliminate players (move eliminated players to the end)
       for(int i = 0; i < playersLeft; i++) {
+         fprintf(stdout, "Player %"PRId8" has %"PRId16" chips\n", player[i].getNumber(), player[i].getRemainingChips());
          if(player[i].getRemainingChips() == 0) {
             msg_len = pack(msg, "bb", 13, player[i].getNumber());
             if(broadcast(msg, msg_len) == -1)
                fprintf(stderr, "error broadcasting eliminated player");
             eliminate(i);
+            i--; // BAAAAAHH
             playersLeft--;
          }
       }
-
 
       // move dealer
       dealer = (dealer + 1) % playersLeft;
@@ -383,7 +396,7 @@ int server::playerRaised(int8_t n, int16_t a) {
 int server::playerCalled(int8_t n) {
    fprintf(stdout, "Player %"PRId8" tried to call\n", player[n].getNumber());
 
-   if(toCall - player[n].getCurrentBet() > player[n].getRemainingChips())
+   if(toCall - player[n].getCurrentBet() >= player[n].getRemainingChips())
       return playerAllin(n);
 
 
