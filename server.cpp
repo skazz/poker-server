@@ -427,6 +427,7 @@ int server::playerChecked(int8_t n) {
 int server::playerAllin(int8_t n) {
    fprintf(stdout, "Player %"PRId8" is allin\n", player[n].getNumber());
    player[n].allin();
+   playersInHand--;
 
    unsigned char msg[5];
    int msg_len = pack(msg, "bbh", 45, player[n].getNumber(), player[n].getCurrentBet());

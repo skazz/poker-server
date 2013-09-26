@@ -1,6 +1,10 @@
+test handEvaluator
+
 game loop
-   hand evaluator
+   showdown (reveal cards)
    pot distribution
+
+logfile
 
 implement virtual function for all events (client)
    just notifiy about changes? (single function)

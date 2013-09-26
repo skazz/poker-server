@@ -12,7 +12,7 @@ client.o: client.cpp client.h pack.o
 dummy: $(OBJ)
 	$(CC) -o dummy dummyClient.o client.o pack.o $(CFLAGS)
 
-server: server.o socketHandler.o pack.o seat.o deckC.o
+server: server.o socketHandler.o pack.o seat.o deckC.o handEvaluator.o
 	$(CC) -o server server.o pack.o seat.o deckC.o $(CFLAGS)
 
 clean:
