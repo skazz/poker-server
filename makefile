@@ -13,7 +13,7 @@ dummy: $(OBJ)
 	$(CC) -o dummy dummyClient.o client.o pack.o $(CFLAGS)
 
 server: server.o socketHandler.o pack.o seat.o deckC.o handEvaluator.o
-	$(CC) -o server server.o pack.o seat.o deckC.o $(CFLAGS)
+	$(CC) -o server server.o pack.o seat.o deckC.o handEvaluator.o $(CFLAGS)
 
 clean:
 	rm *.o dummy server

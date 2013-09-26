@@ -2,6 +2,7 @@
 #include "deckC.h"
 #include "socketHandler.cpp"
 #include "seat.h"
+#include "handEvaluator.h"
 
 #include <fstream>
 #include <iostream>

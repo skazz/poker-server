@@ -183,6 +183,11 @@ int server::gameLoop() {
    deckC deck;
    int8_t flop[3];
    int8_t river, turn;
+   int8_t board[5];
+   int8_t tmpHole[2];
+   int handrank[playerCount];
+
+   handEvaluator eval;
 
 
    while(playersLeft > 1) {
@@ -262,8 +267,10 @@ int server::gameLoop() {
 
       // flop
       deck.getCard();
-      for(int i = 0; i < 3; i++)
+      for(int i = 0; i < 3; i++) {
          flop[i] = deck.getCard();
+         board[i] = flop[i];
+      }
 
       msg_len = pack(msg, "bbbb", 31, flop[0], flop[1], flop[2]);
       if(broadcast(msg, msg_len) == -1)
@@ -275,6 +282,7 @@ int server::gameLoop() {
       // turn
       deck.getCard();
       turn = deck.getCard();
+      board[3] = turn;
       msg_len = pack(msg, "bb", 32, turn);
       if(broadcast(msg, msg_len) == -1)
          fprintf(stderr, "error broadcasting turn\n");
@@ -285,6 +293,7 @@ int server::gameLoop() {
       // river
       deck.getCard();
       river = deck.getCard();
+      board[4] = river;
       msg_len = pack(msg, "bb", 33, river);
       if(broadcast(msg, msg_len) == -1)
          fprintf(stderr, "error broadcasting river\n");
@@ -293,7 +302,20 @@ int server::gameLoop() {
       // betting round 4
       bettingRound();
 
-      // search winning hand(s)
+      // get hand rankings
+      eval.setBoard(board);
+      for(int i = 0; i < playersLeft; i++) {
+         if(!player[i].hasFolded()) {
+            tmpHole[0] = player[i].getHoleCard(0);
+            tmpHole[1] = player[i].getHoleCard(1);
+            handrank[i] = eval.getHandrank(tmpHole);
+            fprintf(stdout, "Player %d has %d\n", i, handrank[i]);
+         } else
+            handrank[i] = 0;
+      }
+
+      // search winning hand
+      
 
       // distribute pot
       for(int i = 0; i < playersLeft; i++)

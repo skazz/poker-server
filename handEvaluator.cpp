@@ -1,4 +1,5 @@
 #include "handEvaluator.h"
+#include <fstream>
 
 // complete crap, misunderstood kickers
 
@@ -11,6 +12,10 @@ handEvaluator::handEvaluator() {
 
    for(int i = 0; i < 13; i++)
       value[i] = 0;
+
+   HOCH2 = 13*13;
+   HOCH3 = HOCH2*13;
+   HOCH4 = HOCH3*13;
 
 }
 
@@ -26,10 +31,13 @@ int handEvaluator::setBoard(int8_t *_board) {
    for(int i = 0; i < 13; i++)
       value[i] = 0;
 
+   for(int i = 0; i < 5; i++)
+      kicker[i] = -1;
+
 
    for(int i = 0; i < 5; i++) {
       suit[board[i] / 13]++;
-      value[board[i] % 4]++;
+      value[board[i] % 13]++;
    }
 
    return 0;
@@ -44,14 +52,18 @@ int handEvaluator::getHandrank(int8_t *_holeCard) {
    
    for(int i = 0; i < 2; i++) {
       suit[holeCard[i] / 13]++;
-      value[holeCard[i] % 4]++;
+      value[holeCard[i] % 13]++;
    }
+
+   for(int i = 0; i < 13; i++)
+      if(value[i] > 0)
+         fprintf(stdout, "%d %d's\n", value[i], i);
 
    handrank = evaluate();
 
    for(int i = 0; i < 2; i++) {
       suit[holeCard[i] / 13]--;
-      value[holeCard[i] % 4]--;
+      value[holeCard[i] % 13]--;
    }
 
    return handrank;
@@ -62,8 +74,6 @@ int handEvaluator::evaluate() {
    int threes = -1;
    int highPair = -1;
    int lowPair = -1;
-   int highCard = (holeCard[0] > holeCard[1]) ?holeCard[0]:holeCard[1];
-   int lowCard = (holeCard[0] > holeCard[1]) ?holeCard[1]:holeCard[0];
    int straight = -1;
 
    int flush[5];
@@ -105,12 +115,12 @@ int handEvaluator::evaluate() {
 
             // straight flush
             if(count == 5)
-               return 5512 + j + 4;
+               return 840541 + j + 4;
 
          }
          // ace - 5
          if(count == 4 && tmp[12] == 1)
-            return 5512 + 3;
+            return 840541 + 3;
       }
 
    // scanning values
@@ -118,13 +128,14 @@ int handEvaluator::evaluate() {
    int count = 0;
    for(int i = 12; i >= 0; i--) {
 
-      if(kickerIndex < 5) {
-         kicker[kickerIndex] = i;
-         kickerIndex++;
-      }
-
-      if(value[i] > 0)
+      
+      if(value[i] > 0) {
+         if(kickerIndex < 5) {
+            kicker[kickerIndex] = i;
+            kickerIndex++;
+         }
          count++;
+      }
       else
          count = 0;
 
@@ -162,24 +173,25 @@ int handEvaluator::evaluate() {
       return 840177 + threes*13 + highPair;
    }
    else if(gotFlush)
-      return 437944 + flush[0]*13^4 + flush[1]*13^3 + flush[2]*13^2 + flush[3]*13 + flush[4];
+      return 437944 + flush[0]*HOCH4 + flush[1]*HOCH3 + flush[2]*HOCH2 + flush[3]*13 + flush[4];
    else if(straight != -1)
       return 437931 + straight;
    else if(threes != -1) {
       removeFromKicker(threes);
-      return 435552 + threes*13^2 + kicker[0]*13 + kicker[1];
+      return 435552 + threes*HOCH2 + kicker[0]*13 + kicker[1];
    }
    else if(highPair != -1 && lowPair != -1) {
       removeFromKicker(highPair);
       removeFromKicker(lowPair);
-      return 433173 + highPair*13^2 + lowPair*13 + kicker[0];
+      return 433173 + highPair*HOCH2 + lowPair*13 + kicker[0];
    }
    else if(highPair != -1) {
       removeFromKicker(highPair);
-      return 402233 + highPair*13^3 + kicker[0]*13^2 + kicker[1]*13 + kicker[2];
+      return 402233 + highPair*HOCH3 + kicker[0]*HOCH2 + kicker[1]*13 + kicker[2];
    }
-   else
-      return kicker[0]*13^4 + kicker[1]*13^3 + kicker[2]*13^2 + kicker[3]*13 + kicker[4];
+   else {
+      return kicker[0]*HOCH4 + kicker[1]*HOCH3 + kicker[2]*HOCH2 + kicker[3]*13 + kicker[4];
+   }
 
 }
 

@@ -25,4 +25,9 @@ private:
    int value[13];
 
    int kicker[5];
+
+   int HOCH4;
+   int HOCH3;
+   int HOCH2;
+
 };
