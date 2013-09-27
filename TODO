@@ -6,8 +6,7 @@ test handEvaluator
 
 logfile
 
-implement virtual function for all events (client)
-   just notifiy about changes? (single function)
+just notifiy about changes? (single function)
 
 
 read function

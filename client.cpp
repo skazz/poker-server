@@ -93,102 +93,128 @@ int client::read(unsigned char *buf) {
       placeBet();
       return 0;
    case 0:
-      fprintf(stdout, "Did well\n");
-      return 0;
-   case 1:
-      fprintf(stdout, "Dont know this move\n");
-      return 0;
-   case 2:
-      fprintf(stdout, "Not allowed\n");
-      return 0;
-   case 3:
-      fprintf(stdout, "Bet too low\n");
+      //fprintf(stdout, "Did well\n");
+      actionAccepted();
       return 0;
    case 41:
       unpack(p, "b", &a);
-      fprintf(stdout, "Player %"PRId8" folded\n", a);
+      //fprintf(stdout, "Player %"PRId8" folded\n", a);
+      playerFolded(a);
       return 0;
    case 42:
       unpack(p, "bh", &a, &d);
-      fprintf(stdout, "Player %"PRId8" raised by %"PRId16"\n", a, d);
+      //fprintf(stdout, "Player %"PRId8" raised by %"PRId16"\n", a, d);
+      playerRaised(a, d);
       return 0;
    case 43:
       unpack(p, "b", &a);
-      fprintf(stdout, "Player %"PRId8" called\n", a);
+      //fprintf(stdout, "Player %"PRId8" called\n", a);
+      playerCalled(a);
       return 0;
    case 44:
       unpack(p, "b", &a);
-      fprintf(stdout, "Player %"PRId8" checked\n", a);
+      //fprintf(stdout, "Player %"PRId8" checked\n", a);
+      playerChecked(a);
       return 0;
    case 45:
       unpack(p, "bh", &a, &d);
-      fprintf(stdout, "Player %"PRId8" is Allin for %"PRId16"\n", a, d);
+      //fprintf(stdout, "Player %"PRId8" is Allin for %"PRId16"\n", a, d);
+      playerAllin(a, d);
       return 0;
    case 50:
       unpack(p, "bbb", &a, &b, &c);
-      fprintf(stdout, "Player %"PRId8" got %"PRId8" and %"PRId8"\n", a, b, c);
+      //fprintf(stdout, "Player %"PRId8" got %"PRId8" and %"PRId8"\n", a, b, c);
+      playerHolecards(a, b, c);
    case 30:
       unpack(p, "bb", &a, &b);
-      fprintf(stdout, "You got %" PRId8 " and %" PRId8 "\n", a, b);
+      //fprintf(stdout, "You got %" PRId8 " and %" PRId8 "\n", a, b);
+      setHolecards(a, b);
       return 0;
    case 31:
       unpack(p, "bbb", &a, &b, &c);
-      fprintf(stdout, "Flop : %"PRId8" %"PRId8" %"PRId8"\n", a, b, c);
+      //fprintf(stdout, "Flop : %"PRId8" %"PRId8" %"PRId8"\n", a, b, c);
+      setFlop(a, b, c);
       return 0;
    case 32:
       unpack(p, "b", &a);
-      fprintf(stdout, "Turn : %"PRId8"\n", a);
+      //fprintf(stdout, "Turn : %"PRId8"\n", a);
+      setTurn(a);
       return 0;
    case 33:
       unpack(p, "b", &a);
-      fprintf(stdout, "River: %"PRId8"\n", a);
+      //fprintf(stdout, "River: %"PRId8"\n", a);
+      setRiver(a);
       return 0;
    case 21:
       unpack(p, "b", &a);
-      fprintf(stdout, "Player %"PRId8" is dealer\n");
+      //fprintf(stdout, "Player %"PRId8" is dealer\n", a);
+      playerIsDealer(a);
       return 0;
    case 22:
       unpack(p, "b", &a);
-      fprintf(stdout, "Player %"PRId8" is small blind\n");
+      //fprintf(stdout, "Player %"PRId8" is small blind\n");
+      playerIsSmallBlind(a);
       return 0;
    case 23:
       unpack(p, "b", &a);
-      fprintf(stdout, "Player %"PRId8" is big blind\n");
+      //fprintf(stdout, "Player %"PRId8" is big blind\n");
+      playerIsBigBlind(a);
       return 0;
    case 20:
       unpack(p, "hh", &d, &f);
-      fprintf(stdout, "The blinds are %" PRId16 "/%" PRId16 "\n", d, f);
+      //fprintf(stdout, "The blinds are %" PRId16 "/%" PRId16 "\n", d, f);
+      setBlinds(d, f);
       return 0;
    case 52:
       unpack(p, "bh", &a, &d);
-      fprintf(stdout, "Player %"PRId8" won %"PRId16"\n", a, d);
+      //fprintf(stdout, "Player %"PRId8" won %"PRId16"\n", a, d);
+      playerWon(a, d);
       return 0;
    case 51:
-      fprintf(stdout, "Tie\n");
+      //fprintf(stdout, "Tie\n");
+      tie();
+      return 0;
+   case 1:
+      //fprintf(stdout, "Dont know this move\n");
+      actionUnknown();
+      return 0;
+   case 2:
+      //fprintf(stdout, "Not allowed\n");
+      actionNotAllowed();
+      return 0;
+   case 3:
+      //fprintf(stdout, "Bet too low\n");
+      betTooLow();
       return 0;
    case 11:
       unpack(p, "bs", &a, &s);
-      fprintf(stdout, "%s is Player %" PRId8 "\n", s, a);
+      //fprintf(stdout, "%s is Player %" PRId8 "\n", s, a);
+      setPlayerName(a, s);
       return 0;
    case 10:
       unpack(p, "b", &a);
-      fprintf(stdout, "There are %" PRId8 " Players ingame.\n", a);
+      //fprintf(stdout, "There are %" PRId8 " Players ingame.\n", a);
+      setPlayerCount(a);
       return 0;
    case 12:
       unpack(p, "b", &a);
-      fprintf(stdout, "You are Player %" PRId8 "\n", a);
+      //fprintf(stdout, "You are Player %" PRId8 "\n", a);
+      setSeatNumber(a);
       return 0;
    case 13:
       unpack(p, "b", &a);
-      fprintf(stdout, "Player %" PRId8 " has been eliminated\n", a);
+      //fprintf(stdout, "Player %" PRId8 " has been eliminated\n", a);
+      playerEliminated(a);
       return 0;
    case 14:
       unpack(p, "b", &a);
-      fprintf(stdout, "Player %" PRId8 " has left\n", a);
+      //fprintf(stdout, "Player %" PRId8 " has left\n", a);
+      playerLeft(a);
       return 0;
    case 15:
       unpack(p, "h", &d);
-      fprintf(stdout, "You start with %" PRId16 " chips\n", d);
+      //fprintf(stdout, "You start with %" PRId16 " chips\n", d);
+      setStartingChips(d);
       return 0;
    default:
       return -1;
