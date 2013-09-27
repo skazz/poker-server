@@ -124,6 +124,9 @@ int client::read(unsigned char *buf) {
       unpack(p, "bh", &a, &d);
       fprintf(stdout, "Player %"PRId8" is Allin for %"PRId16"\n", a, d);
       return 0;
+   case 50:
+      unpack(p, "bbb", &a, &b, &c);
+      fprintf(stdout, "Player %"PRId8" got %"PRId8" and %"PRId8"\n", a, b, c);
    case 30:
       unpack(p, "bb", &a, &b);
       fprintf(stdout, "You got %" PRId8 " and %" PRId8 "\n", a, b);
@@ -159,10 +162,6 @@ int client::read(unsigned char *buf) {
    case 52:
       unpack(p, "bh", &a, &d);
       fprintf(stdout, "Player %"PRId8" won %"PRId16"\n", a, d);
-      return 0;
-   case 50:
-      unpack(p, "h", &d);
-      fprintf(stdout, "Winning hand %"PRId16"\n");
       return 0;
    case 51:
       fprintf(stdout, "Tie\n");

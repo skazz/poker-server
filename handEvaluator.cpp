@@ -92,11 +92,11 @@ int handEvaluator::evaluate() {
 
          for(int j = 0; j < 5; j++)
             if(board[j] / 13 == i)
-               tmp[board[j] % 4] = 1;
+               tmp[board[j] % 13] = 1;
 
          for(int j = 0; j < 2; j++)
             if(holeCard[j] / 13 == i)
-               tmp[holeCard[j] % 4] = 1;
+               tmp[holeCard[j] % 13] = 1;
 
          int count = 0;
          int flushIndex = 0;

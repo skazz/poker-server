@@ -180,11 +180,15 @@ int server::gameLoop() {
    int dealer = rand() % playerCount; // rng
    bool blindsChanged = true;
 
+   bool sorted;
+   int tmp, tmppot, minBet, count, sidepot, distributedpot;
+
    deckC deck;
    int8_t flop[3];
    int8_t river, turn;
    int8_t board[5];
    int8_t tmpHole[2];
+   int winner[playerCount];
    int handrank[playerCount];
 
    handEvaluator eval;
@@ -244,7 +248,7 @@ int server::gameLoop() {
       minimumBet = bigBlind;
       toCall = bigBlind;
       playersInHand = playersLeft;
-      lastPlayerRaised = (dealer + 3) % playersLeft; // BULLSHIT
+      lastPlayerRaised = (dealer + 2) % playersLeft; // still weird
 
 
       // deal cards
@@ -309,19 +313,102 @@ int server::gameLoop() {
             tmpHole[0] = player[i].getHoleCard(0);
             tmpHole[1] = player[i].getHoleCard(1);
             handrank[i] = eval.getHandrank(tmpHole);
-            fprintf(stdout, "Player %d has %d\n", i, handrank[i]);
          } else
             handrank[i] = 0;
       }
 
-      // search winning hand
-      
+      // search winning hand (sort for pot distribution?)
+      for(int i = 0; i < playersLeft; i++)
+         winner[i] = i;
+
+      sorted = false;
+      while(!sorted) {
+         sorted = true;
+         for(int i = 0; i < playersLeft - 1; i++) {
+            if(handrank[winner[i]] < handrank[winner[i+1]]) {
+               sorted = false;
+               tmp = winner[i];
+               winner[i] = winner[i+1];
+               winner[i+1] = tmp;
+            }
+         }
+      }
+
+      for(int i = 0; i < playersLeft; i++)
+         fprintf(stdout, "Player %d has %d\n", player[winner[i]].getNumber(), handrank[winner[i]]);
+
 
       // distribute pot
+      pot = 0;
       for(int i = 0; i < playersLeft; i++)
          pot += player[i].getCurrentBet();
 
-      player[0].wins(pot);
+      tmp = 0;
+      sidepot = 0;
+      distributedpot = 0;
+
+      while(pot > 0) {
+         // next sidepot
+         minBet = 999999999;
+         for(int i = 0; i < playersLeft; i++)
+            if(!player[i].hasFolded())
+               if(player[i].getCurrentBet() > tmp && player[i].getCurrentBet() < minBet)
+                  minBet = player[i].getCurrentBet();
+
+
+         tmp = minBet;
+         tmppot = 0;
+         for(int i = 0; i < playersLeft; i++) {
+            if(player[i].getCurrentBet() > tmp)
+               tmppot += tmp;
+            else
+               tmppot += player[i].getCurrentBet();
+         }
+
+         sidepot = tmppot - distributedpot;
+         distributedpot = tmppot;
+         
+         // the best hand in pot
+         int first;
+         for(int i = 0; i < playersLeft; i++)
+            if(player[winner[i]].getCurrentBet() >= tmp) {
+               first = i;
+               break;
+            }
+
+         // count equal hands in pot
+         count = 0;
+         int j = first;
+         while(j < playersLeft) {
+            if(handrank[winner[first]] == handrank[winner[j]]) {
+               if(player[winner[j]].getCurrentBet() >= tmp)
+                  count++;
+            } else {
+               break;
+            }
+           j++;
+         }
+
+         // distribute sidepot
+         int k = 0;
+         j = first;
+
+         fprintf(stdout, "best hand in pot %d %d times\n", handrank[winner[first]], count);
+         while(k < count) {
+            if(player[winner[j]].getCurrentBet() >= tmp) {
+               fprintf(stdout, "player %d bet %d wins %d with %d\n", player[winner[j]].getNumber(), player[winner[j]].getCurrentBet(), sidepot / count,  handrank[winner[j]]);
+               player[winner[j]].wins(sidepot / count);
+               msg_len = pack(msg, "bbh", 52, player[winner[j]].getNumber(), sidepot / count);
+               broadcast(msg, msg_len);
+               k++;
+            }
+            j++;
+         }
+
+         pot -= sidepot;
+      }
+
+
 
       // eliminate players (move eliminated players to the end)
       for(int i = 0; i < playersLeft; i++) {

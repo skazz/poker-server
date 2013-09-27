@@ -28,10 +28,10 @@ server:                    [action]             [byte]
    player called           [seat]               [byte]               43
    player checked          [seat]               [byte]               44
    player allin            [seat][amount]       [byte][short]        45
-   winning hand            [index]              [short?]             50
+   reveal holecards        [seat][card][card]   [byte][byte][byte]   50
    tie                     -                                         51
    player won              [seat][amount]       [byte][short]        52
-   action is fine          -                                         0
-   error unknown action    -                                         1
-   error illegal action    -                                         2
-   error bet too low       -                                         3
+   action is fine          -                                          0
+   error unknown action    -                                          1
+   error illegal action    -                                          2
+   error bet too low       -                                          3

@@ -1,6 +1,6 @@
 game loop
+   abort playersLeft = 1
    showdown (reveal cards)
-   pot distribution
 
 test handEvaluator
 
