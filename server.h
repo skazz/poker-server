@@ -29,6 +29,8 @@ private:
 
    int removePlayer(int8_t n);
 
+   int playerWon(int8_t n, int16_t amount);
+
    int playerFolded(int8_t n);
 
    int playerRaised(int8_t n, int16_t amount);
@@ -49,11 +51,20 @@ private:
 
    int bettingRound();
 
+   int getPot();
+
+   int getPlayersInHand();
+
+   int getPlayersAllin();
+
+   int showdown();
+
    const char *port;
 
    seat player[8];
 
    int startingChips, smallBlind, bigBlind, playersLeft, playerCount;
 
-   int pot, minimumBet, toCall, playersInHand, lastPlayerRaised, turn;
+   int pot, minimumBet, toCall, lastPlayerRaised, turn;
+
 };

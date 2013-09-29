@@ -125,6 +125,7 @@ int client::read(unsigned char *buf) {
       unpack(p, "bbb", &a, &b, &c);
       //fprintf(stdout, "Player %"PRId8" got %"PRId8" and %"PRId8"\n", a, b, c);
       playerHolecards(a, b, c);
+      return 0;
    case 30:
       unpack(p, "bb", &a, &b);
       //fprintf(stdout, "You got %" PRId8 " and %" PRId8 "\n", a, b);

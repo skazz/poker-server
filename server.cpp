@@ -12,8 +12,8 @@ server::server(const char *port, int playerCount) {
    playersLeft = playerCount;
 
    startingChips = 20000;
-   smallBlind = 1000;
-   bigBlind = 2000;
+   smallBlind = 4000;
+   bigBlind = 8000;
 
    for(int8_t i = 0; i < playerCount; i++)
       player[i] = seat(i, startingChips);
@@ -133,10 +133,6 @@ int server::startGame() {
       player[i].setFD(client[i]);
 
    
-   cin.get();
-
-
-
    // get names
    for(int i = 0; i < playerCount; i++) {
       if(readNext(i) == -1)
@@ -179,6 +175,7 @@ int server::gameLoop() {
 
    int dealer = rand() % playerCount; // rng
    bool blindsChanged = true;
+   bool cardsOnTable = false;
 
    bool sorted;
    int tmp, tmppot, minBet, count, sidepot, distributedpot;
@@ -195,8 +192,6 @@ int server::gameLoop() {
 
 
    while(playersLeft > 1) {
-
-      pot = 0;
 
       // shuffle deck
       deck.shuffle();
@@ -247,8 +242,8 @@ int server::gameLoop() {
 
       minimumBet = bigBlind;
       toCall = bigBlind;
-      playersInHand = playersLeft;
-      lastPlayerRaised = (dealer + 2) % playersLeft; // still weird
+      cardsOnTable = false;
+      lastPlayerRaised = (dealer + 2) % playersLeft; // still weird reset counter in betting round
 
 
       // deal cards
@@ -268,6 +263,21 @@ int server::gameLoop() {
       turn = (dealer + 3) % playersLeft;
       bettingRound();
 
+      // check remaining players / allins
+      if(getPlayersInHand() <= 1) {
+         if(getPlayersAllin() > 0) {
+            cardsOnTable = true;
+            showdown();
+         } else {
+            for(int i = 0; i < playersLeft; i++) {
+               if(!player[i].hasFolded()) {
+                  playerWon(i, getPot());
+               }
+            }
+            continue;
+         }
+      }
+
 
       // flop
       deck.getCard();
@@ -281,7 +291,25 @@ int server::gameLoop() {
          fprintf(stderr, "error broadcasting flop\n");
 
       // betting round 2
-      bettingRound();
+      if(!cardsOnTable)
+         bettingRound();
+
+      // check remaining players / allins
+      if(getPlayersInHand() <= 1) {
+         if(getPlayersAllin() > 0) {
+            if(!cardsOnTable) {
+               cardsOnTable = true;
+               showdown();
+            }
+         } else {
+            for(int i = 0; i < playersLeft; i++) {
+               if(!player[i].hasFolded()) {
+                  playerWon(i, getPot());
+               }
+            }
+            continue;
+         }
+      }
 
       // turn
       deck.getCard();
@@ -292,7 +320,25 @@ int server::gameLoop() {
          fprintf(stderr, "error broadcasting turn\n");
 
       // betting round 3
-      bettingRound();
+      if(!cardsOnTable)
+         bettingRound();
+
+       // check remaining players / allins
+      if(getPlayersInHand() <= 1) {
+         if(getPlayersAllin() > 0) {
+            if(!cardsOnTable) {
+               cardsOnTable = true;
+               showdown();
+            }
+         } else {
+            for(int i = 0; i < playersLeft; i++) {
+               if(!player[i].hasFolded()) {
+                  playerWon(i, getPot());
+               }
+            }
+            continue;
+         }
+      }
 
       // river
       deck.getCard();
@@ -304,7 +350,21 @@ int server::gameLoop() {
 
 
       // betting round 4
-      bettingRound();
+      if(!cardsOnTable)
+         bettingRound();
+
+       // check remaining players / allins
+      if(getPlayersInHand() == 1 && getPlayersAllin() == 0) {
+         for(int i = 0; i < playersLeft; i++) {
+            if(!player[i].hasFolded()) {
+               playerWon(i, getPot());
+            }
+         }
+         continue;
+      }
+
+      if(!cardsOnTable)
+         showdown();
 
       // get hand rankings
       eval.setBoard(board);
@@ -339,9 +399,7 @@ int server::gameLoop() {
 
 
       // distribute pot
-      pot = 0;
-      for(int i = 0; i < playersLeft; i++)
-         pot += player[i].getCurrentBet();
+      pot = getPot();
 
       tmp = 0;
       sidepot = 0;
@@ -396,10 +454,7 @@ int server::gameLoop() {
          fprintf(stdout, "best hand in pot %d %d times\n", handrank[winner[first]], count);
          while(k < count) {
             if(player[winner[j]].getCurrentBet() >= tmp) {
-               fprintf(stdout, "player %d bet %d wins %d with %d\n", player[winner[j]].getNumber(), player[winner[j]].getCurrentBet(), sidepot / count,  handrank[winner[j]]);
-               player[winner[j]].wins(sidepot / count);
-               msg_len = pack(msg, "bbh", 52, player[winner[j]].getNumber(), sidepot / count);
-               broadcast(msg, msg_len);
+               playerWon(winner[j], sidepot / count);
                k++;
             }
             j++;
@@ -434,7 +489,7 @@ int server::bettingRound() {
    int tries = 0;
    int success = -1;
 
-   while(playersInHand > 1 && (lastPlayerRaised != turn || count < playersLeft)) {
+   while(getPlayersInHand() > 1 && (lastPlayerRaised != turn || count < playersLeft)) {
       if(!player[turn].hasFolded() && !player[turn].isAllin()) {
          tries = 0;
          do {
@@ -454,6 +509,45 @@ int server::bettingRound() {
    return 0;
 }
 
+int server::showdown() {
+   unsigned char msg[5];
+   int msg_len;
+   for(int i = 0; i < playersLeft; i++) {
+      if(!player[i].hasFolded()) {
+         msg_len = pack(msg, "bbbb", 50, player[i].getNumber(), player[i].getHoleCard(0), player[i].getHoleCard(1));
+         broadcast(msg, msg_len);
+      }
+   }
+
+   return 0;
+}
+
+int server::getPot() {
+   int p = 0;
+   for(int i = 0; i < playersLeft; i++)
+      p += player[i].getCurrentBet();
+
+   return p;
+}
+
+int server::getPlayersInHand() {
+   int c = 0;
+   for(int i = 0; i < playersLeft; i++)
+      if(!player[i].hasFolded() && !player[i].isAllin())
+         c++;
+
+   return c;
+}
+
+int server::getPlayersAllin() {
+   int c = 0;
+   for(int i = 0; i < playersLeft; i++)
+      if(player[i].isAllin())
+         c++;
+
+   return c;
+}
+
 int server::requestAction(int8_t n) {
    unsigned char msg[2];
    int msg_len = pack(msg, "b", 40);
@@ -465,7 +559,6 @@ int server::playerFolded(int8_t n) {
    fprintf(stdout, "Player %"PRId8" folded\n", player[n].getNumber());
 
    player[n].folds();
-   playersInHand--;
 
    unsigned char msg[3];
    int msg_len = pack(msg, "bb", 41, player[n].getNumber());
@@ -535,8 +628,8 @@ int server::playerChecked(int8_t n) {
 
 int server::playerAllin(int8_t n) {
    fprintf(stdout, "Player %"PRId8" is allin\n", player[n].getNumber());
+
    player[n].allin();
-   playersInHand--;
 
    unsigned char msg[5];
    int msg_len = pack(msg, "bbh", 45, player[n].getNumber(), player[n].getCurrentBet());
@@ -554,6 +647,17 @@ int server::playerBailed(int8_t n) {
    int msg_len = pack(msg, "bb", 14, player[n].getNumber());
    if(broadcast(msg, msg_len) == -1)
       fprintf(stderr, "error broadcasting bail\n");
+   return 0;
+}
+
+int server::playerWon(int8_t n, int16_t amount) {
+   fprintf(stdout, "player %d bet %d wins %d\n", player[n].getNumber(), player[n].getCurrentBet(), amount);
+   player[n].wins(amount);
+
+   unsigned char msg[5];
+   int msg_len = pack(msg, "bbh", 52, player[n].getNumber(), amount);
+   broadcast(msg, msg_len);
+
    return 0;
 }
 
@@ -593,6 +697,4 @@ int main(int argc, char *argv[]) {
 
    myServer.startGame();
    
-   cin.get();
-
 }

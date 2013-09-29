@@ -1,6 +1,6 @@
-game loop
-   abort playersLeft = 1
-   showdown (reveal cards)
+write simple cli interface for client (later qt?)
+
+test game loop
 
 test handEvaluator
 
