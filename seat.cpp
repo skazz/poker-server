@@ -7,24 +7,24 @@ seat::seat(int8_t n, int chips) {
    remainingChips = chips;
 }
 
-int seat::dealHoleCard(int n, int8_t card) {
+void seat::dealHoleCard(int n, int8_t card) {
    holeCard[n] = card;
 }
 
-int seat::bets(int n) {
+void seat::bets(int n) {
    remainingChips -= n;
    currentBet += n;
 }
 
-int seat:: wins(int n) {
+void seat:: wins(int n) {
    remainingChips += n;
 }
 
-int seat::folds() {
+void seat::folds() {
    folded = true;
 }
 
-int seat::allin() {
+void seat::allin() {
    bets(remainingChips);
    allined = true;
 }
@@ -33,7 +33,7 @@ bool seat::hasFolded() {
    return folded;
 }
 
-int seat::newRound() {
+void seat::newRound() {
    folded = false;
    allined = false;
    currentBet = 0;

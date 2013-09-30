@@ -62,6 +62,7 @@ int waitForPlayers(int sockfd, int *client, int playerCount) {
    }
 
    close(sockfd); //all done
+   return 0;
 }
 
 int setup(int *client, int playerCount, const char *port) {
@@ -115,4 +116,6 @@ int setup(int *client, int playerCount, const char *port) {
 int cleanup(int *fd) {
    for(; *fd != '\0'; fd++)
       close(*fd);
+
+   return 0;
 }

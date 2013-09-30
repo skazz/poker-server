@@ -165,7 +165,7 @@ int server::startGame() {
       fprintf(stderr, "error broadcasting starting chips\n");
 
    // commence
-   gameLoop();
+   return gameLoop();
    
 }
 
@@ -482,6 +482,8 @@ int server::gameLoop() {
       dealer = (dealer + 1) % playersLeft;
    }
 
+   return 0;
+
 }
 
 int server::bettingRound() {
@@ -551,8 +553,11 @@ int server::getPlayersAllin() {
 int server::requestAction(int8_t n) {
    unsigned char msg[2];
    int msg_len = pack(msg, "b", 40);
-   if(sendAll(n, msg, msg_len) == -1)
+   if(sendAll(n, msg, msg_len) == -1) {
       fprintf(stderr, "error sending request to %"PRId8"\n", n);
+      return -1;
+   }
+   return 0;
 }
 
 int server::playerFolded(int8_t n) {
@@ -661,14 +666,14 @@ int server::playerWon(int8_t n, int16_t amount) {
    return 0;
 }
 
-int server::removePlayer(int8_t n) {
+void server::removePlayer(int8_t n) {
    for(int i = n; i < playerCount - 1; i++)
       player[i] = player[i+1];
 
    playerCount--;
 }
 
-int server::eliminate(int8_t n) {
+void server::eliminate(int8_t n) {
    seat tmp = player[n];
    for(int i = n; i < playerCount - 1; i++)
       player[i] = player[i+1];

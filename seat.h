@@ -7,9 +7,9 @@ public:
 
    seat(int8_t n, int chips);
 
-   int newRound();
+   void newRound();
 
-   int dealHoleCard(int n, int8_t card);
+   void dealHoleCard(int n, int8_t card);
 
    int8_t getHoleCard(int n) { return holeCard[n]; };
 
@@ -19,23 +19,23 @@ public:
 
    int getCurrentBet() { return currentBet; };
 
-   int bets(int n);
+   void bets(int n);
 
-   int wins(int n);
+   void wins(int n);
 
-   int folds();
+   void folds();
 
-   int allin();
+   void allin();
 
    bool hasFolded();
 
    bool isAllin() { return allined; };
 
-   int setFD(int n) { fd = n; };
+   void setFD(int n) { fd = n; };
 
    int getFD() { return fd; };
 
-   int setName(unsigned char *_name) { name = _name; };
+   void setName(unsigned char *_name) { name = _name; };
 
    unsigned char* getName() { return name; };
 

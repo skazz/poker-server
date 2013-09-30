@@ -25,9 +25,9 @@ private:
 
    int broadcast(unsigned char *msg, int msg_len);
 
-   int eliminate(int8_t n);
+   void eliminate(int8_t n);
 
-   int removePlayer(int8_t n);
+   void removePlayer(int8_t n);
 
    int playerWon(int8_t n, int16_t amount);
 

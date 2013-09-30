@@ -18,7 +18,7 @@ int client::connectToServer(const char *remoteHost, const char *port) {
    hints.ai_family = AF_UNSPEC;
    hints.ai_socktype = SOCK_STREAM;
 
-   if(status = getaddrinfo(remoteHost, port, &hints, &res) != 0)
+   if((status = getaddrinfo(remoteHost, port, &hints, &res)) != 0)
       return -1;
 
    if((sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) < 0)
