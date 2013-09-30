@@ -1,0 +1,11 @@
+zum server bauen "make server"
+zum dummyClient bauen "make dummy"
+
+virtuelle klasse fuer clients ist in client.h
+client.h braucht pack.h pack.cpp
+beispiel in dummyClient.cpp
+zum bauen am besten eigenen makefile eintrag schreiben "dummy:" als beispiel nehmen (vor dem befehl MUSS ein tab sein, keine leerzeichen)
+
+zum starten
+server starten "./server -n ANZAHL" ANZAHL ist anzahl spieler (kleiner 9 groesser 1, ohne parameter ist 3 standard)
+client starten "./dummy IP PORT" (ohne parameter ist 127.0.0.1 3031 standard)
