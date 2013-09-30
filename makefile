@@ -1,19 +1,22 @@
-CC=g++
-CFLAGS=-I.
-OBJ = dummyClient.o client.o pack.o
-DEPS = client.h pack.h
+CC = g++
+DEBUG = -g
+CFLAGS = -Wall -c $(DEBUG)
+LFLAGS = -Wall $(DEBUG)
+OBJ = server.o pack.o seat.o deckC.o handEvaluator.o
+DEPS = $(OBJ) socketHandler.o
+
+
+server: $(DEPS)
+	$(CC) $(LFLAGS) $(OBJ) -o server
+
+dummy: dummyClient.o client.o pack.o
+	$(CC) dummyClient.o client.o pack.o -o dummy
 
 %.o: %.cpp %.h
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-client.o: client.cpp client.h pack.o
-	$(CC) -c client.cpp
-
-dummy: $(OBJ)
-	$(CC) -o dummy dummyClient.o client.o pack.o $(CFLAGS)
-
-server: server.o socketHandler.o pack.o seat.o deckC.o handEvaluator.o
-	$(CC) -o server server.o pack.o seat.o deckC.o handEvaluator.o $(CFLAGS)
+	$(CC) $(CFLAGS) -o $@ $<
 
 clean:
 	rm *.o dummy server
+
+tar:
+	tar czvf poker.tar.gz *.cpp *.h makefile README TODO list_of_actions handranks
