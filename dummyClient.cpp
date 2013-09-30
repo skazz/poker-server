@@ -42,7 +42,7 @@ void dummyClient::setHolecards(int8_t c1, int8_t c2) {
 }
 
 void dummyClient::playerHolecards(int8_t n, int8_t c1, int8_t c2) {
-   fprintf(stdout, "Player %"PRId8" has %s | %s\n", n, getCardName(c1).c_str(), getCardName(c2).c_str());
+   fprintf(stdout, "Player %d has %s | %s\n", n, getCardName(c1).c_str(), getCardName(c2).c_str());
 }
 
 void dummyClient::setFlop(int8_t c1, int8_t c2, int8_t c3) {
@@ -58,11 +58,11 @@ void dummyClient::setRiver(int8_t c1) {
 }
 
 void dummyClient::playerIsDealer(int8_t n) {
-   fprintf(stdout, " Player %"PRId8" is dealer\n", n);
+   fprintf(stdout, " Player %d is dealer\n", n);
 }
 
 void dummyClient::playerWon(int8_t n, int16_t amount) {
-   fprintf(stdout, " Player %"PRId8" won %"PRId16"\n", n, amount);
+   fprintf(stdout, " Player %d won %d\n", n, amount);
 }
 
 string dummyClient::getCardName(int8_t c) {
@@ -72,9 +72,19 @@ string dummyClient::getCardName(int8_t c) {
    return value[c % 13] + string(" of ") + suit[c / 13];
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+   const char *port = "3031";
+   const char *ip = "127.0.0.1";
+
+   if(argc > 1)
+      ip = argv[1];
+   if(argc > 2)
+      port = argv[2];
+
+   fprintf(stdout, "Connection to %s on %s\n", ip, port);
 
    dummyClient skazz("skazz");
-   skazz.connectToServer("127.0.0.1", "3031");
+
+   skazz.connectToServer(ip, port);
 
 }
