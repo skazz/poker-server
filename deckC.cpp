@@ -11,6 +11,8 @@ int deckC::shuffle() {
    cardsLeft = 52;
    for(int8_t i = 0; i < 52; i++)
       cards[i] = i;
+
+   return 0;
 }
 
 int8_t deckC::getCard() {

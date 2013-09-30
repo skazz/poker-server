@@ -51,6 +51,11 @@ int server::broadcast(unsigned char *msg, int msg_len) {
 
 int server::readNext(int8_t n) {
 
+   struct timeval tv;
+   fd_set readfds;
+
+   time_t start, now;
+
    int fd = player[n].getFD();
    unsigned char buf[32], tmp_buf[64], *p;
    int buf_len = sizeof buf;
@@ -63,57 +68,71 @@ int server::readNext(int8_t n) {
    unsigned char s[16];
    int msg_len;
 
-   while((bytes_received = recv(fd, buf, buf_len, 0)) > 0) {
-      //fprintf(stdout, "Received %d Bytes\n", bytes_received);
+   time(&start);
+   time(&now);
 
-      memcpy(tmp_buf + tmp_offset, buf, bytes_received);
-      tmp_offset += bytes_received;
-      if(bytes_received < 1)
-         continue;
+   FD_ZERO(&readfds);
+   FD_SET(fd, &readfds);
 
-      size = *tmp_buf;
+   while(difftime(now, start) < 45) {
 
-      // TODO: while no success..., timeout
-      if(tmp_offset >= size + 1) {
-         //fprintf(stdout, "Read %d Bytes\n", size + 1);
+      tv.tv_sec = 45 - difftime(start, now);
+      tv.tv_usec = 0;
+      select(fd+1, &readfds, NULL, NULL, &tv);
 
-         p = tmp_buf + 1;
+      if(FD_ISSET(fd, &readfds)) {
+         if((bytes_received = recv(fd, buf, buf_len, 0)) > 0) {
 
-         action = *p++;
+            memcpy(tmp_buf + tmp_offset, buf, bytes_received);
+            tmp_offset += bytes_received;
+            if(bytes_received < 1)
+               continue;
 
-         switch(action) {
-         case 0:
-            unpack(p, "s", &s);
-            player[n].setName(s);
-            msg_len = pack(msg, "bbs", 11, player[n].getNumber(), s);
-            if(broadcast(msg, msg_len) == -1)
-               fprintf(stderr, "error broadcasting name\n");
-            
-            fprintf(stdout, "%s joined\n", player[n].getName());
-            return 1;
-         case 1:
-            return playerFolded(n);
-         case 2:
-            unpack(p, "h", &d);
-            return playerRaised(n, d);
-         case 3:
-            return playerCalled(n);
-         case 4: 
-            return playerChecked(n);
-         case 5:
-            return playerAllin(n);
-         case 6:
-            return playerBailed(n);
-         default:
-            return -1;
-         }
-
-         tmp_offset -= (size + 1);
-         memmove(tmp_buf, tmp_buf + size + 1, tmp_offset);
-
-         if(tmp_offset > 0)
             size = *tmp_buf;
+
+            // TODO: while no success..., timeout
+            if(tmp_offset >= size + 1) {
+
+               p = tmp_buf + 1;
+
+               action = *p++;
+
+               switch(action) {
+               case 0:
+                  unpack(p, "s", &s);
+                  player[n].setName(s);
+                  msg_len = pack(msg, "bbs", 11, player[n].getNumber(), s);
+                  if(broadcast(msg, msg_len) == -1)
+                     fprintf(stderr, "error broadcasting name\n");
+                  
+                  fprintf(stdout, "%s joined\n", player[n].getName());
+                  return 1;
+               case 1:
+                  return playerFolded(n);
+               case 2:
+                  unpack(p, "h", &d);
+                  return playerRaised(n, d);
+               case 3:
+                  return playerCalled(n);
+               case 4: 
+                  return playerChecked(n);
+               case 5:
+                  return playerAllin(n);
+               case 6:
+                  return playerBailed(n);
+               default:
+                  return -1;
+               }
+
+               tmp_offset -= (size + 1);
+               memmove(tmp_buf, tmp_buf + size + 1, tmp_offset);
+
+               if(tmp_offset > 0)
+                  size = *tmp_buf;
+            }
+         }
       }
+      time(&now);
    }
 
    return -1;
@@ -488,25 +507,42 @@ int server::gameLoop() {
 
 int server::bettingRound() {
    int count = 0;
-   int tries = 0;
    int success = -1;
 
    while(getPlayersInHand() > 1 && (lastPlayerRaised != turn || count < playersLeft)) {
       if(!player[turn].hasFolded() && !player[turn].isAllin()) {
-         tries = 0;
-         do {
-            requestAction(turn);
-            tries++;
-         }
-         while((success = readNext(turn) != 0) && tries < 3);
-
-         if(success != 0)
+         // empty socket, only latest action counts
+         clear(turn);
+         requestAction(turn);
+         if((success = readNext(turn)) != 0)
             playerFolded(turn);
 
       }
 
       turn = (turn + 1) % playersLeft;
       count++;
+   }
+   return 0;
+}
+
+int server::clear(int8_t n) {
+   int fd = player[n].getFD();
+   fd_set readfds;
+   struct timeval tv;
+   tv.tv_sec = 0;
+   tv.tv_usec = 0;
+
+   FD_ZERO(&readfds);
+   FD_SET(fd, &readfds);
+   bool empty = false;
+
+   while(!empty) {
+      empty = true;
+      select(fd+1, &readfds, NULL, NULL, &tv);
+      if(FD_ISSET(fd, &readfds)) {
+         recv(fd, NULL, 64, 0);
+         empty = false;
+      }
    }
    return 0;
 }

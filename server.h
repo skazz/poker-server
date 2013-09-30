@@ -47,6 +47,8 @@ private:
 
    int readNext(int8_t n);
 
+   int clear(int8_t n);
+
    int gameLoop();
 
    int bettingRound();
