@@ -1,7 +1,5 @@
 #include "handEvaluator.h"
-#include <fstream>
 
-// complete crap, misunderstood kickers
 
 using namespace std;
 
@@ -54,10 +52,6 @@ int handEvaluator::getHandrank(int8_t *_holeCard) {
       suit[holeCard[i] / 13]++;
       value[holeCard[i] % 13]++;
    }
-
-   for(int i = 0; i < 13; i++)
-      if(value[i] > 0)
-         fprintf(stdout, "%d %d's\n", value[i], i);
 
    handrank = evaluate();
 
@@ -145,8 +139,14 @@ int handEvaluator::evaluate() {
       if(fours == -1 && value[i] == 4) {
          fours = i;
 
-      } else if(threes == -1 && value[i] == 3) {
-         threes = i;
+      } else if(value[i] == 3) {
+         // two trips make a full house...
+         if(threes == -1)
+            threes = i;
+         else if(highPair == -1)
+            highPair = i;
+         else if(lowPair == -1)
+            lowPair = i;
          
       } else if(value[i] == 2) {
          if(highPair == -1) {
