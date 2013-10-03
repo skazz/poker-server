@@ -35,8 +35,6 @@ private:
 
 
 void dummyClient::placeBet() {
-   fprintf(stdout, "Your turn: ");
-   cin.get();
    check();
 }
 
