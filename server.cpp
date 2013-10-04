@@ -291,8 +291,10 @@ int server::gameLoop() {
          fprintf(stderr, "error broadcasting flop\n");
 
       // betting round 2
-      if(!cardsOnTable)
+      if(!cardsOnTable) {
+         turn = (dealer + 1) % playersLeft;
          bettingRound();
+      }
 
       // check remaining players / allins
       if(getPlayersInHand() <= 1) {
@@ -320,8 +322,10 @@ int server::gameLoop() {
          fprintf(stderr, "error broadcasting turn\n");
 
       // betting round 3
-      if(!cardsOnTable)
+      if(!cardsOnTable) {
+         turn = (dealer + 1) % playersLeft;
          bettingRound();
+      }
 
        // check remaining players / allins
       if(getPlayersInHand() <= 1) {
@@ -350,8 +354,10 @@ int server::gameLoop() {
 
 
       // betting round 4
-      if(!cardsOnTable)
+      if(!cardsOnTable) {
+         turn = (dealer + 1) % playersLeft;
          bettingRound();
+      }
 
        // check remaining players / allins
       if(getPlayersInHand() == 1 && getPlayersAllin() == 0) {
