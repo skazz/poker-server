@@ -12,8 +12,8 @@ server::server(const char *port, int playerCount) {
    playersLeft = playerCount;
 
    startingChips = 20000;
-   smallBlind = 4000;
-   bigBlind = 8000;
+   smallBlind = 1000;
+   bigBlind = 2000;
 
    for(int8_t i = 0; i < playerCount; i++)
       player[i] = seat(i, startingChips);
