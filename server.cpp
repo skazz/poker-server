@@ -18,7 +18,7 @@ server::server(const char *port, int playerCount) {
    for(int8_t i = 0; i < playerCount; i++)
       player[i] = seat(i, startingChips);
 
-   log.setLogLevel(POT);
+   log.setLogLevel(VERBOSE);
    log.setDisplayMessages(true);
 
 }
