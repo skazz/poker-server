@@ -3,9 +3,8 @@
 #include "socketHandler.cpp"
 #include "seat.h"
 #include "handEvaluator.h"
+#include "log.h"
 
-#include <fstream>
-#include <iostream>
 #include <cstdlib>
 #include <time.h>
 
@@ -60,6 +59,8 @@ private:
    int getPlayersAllin();
 
    int showdown();
+
+   CLog log;
 
    const char *port;
 
