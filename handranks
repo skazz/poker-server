@@ -12,30 +12,3 @@ flush          437,944  +  flush[0]*13^4 + flush[0]*13^3 + flush[0]*13^2 + flush
 full house     840,177  +  3's*13^1 + 2's*13^0
 4 of a kind    840,359  +  4's*13^1 + kicker[0]*13^0
 straight flush 840,541  +  top end
-
-
-                           base value     different hands
-
-                                 3946     best hand (royal flush)
-straight flush                   3936     10
-4 of kind + kicker               3780     13 * 12
-full house                       3624     13 * 12
-flush + flush kicker in hand     3611     13
-straight                         3601     10
-3 of a kind + 2 kicker           1885     13 * 12 * 11
-2 pair + kicker                   169     13 * 12 * 11
-pair + kicker                      13     13 * 12
-high card in hand                   0     13
-
-
-// klappt nur bei gleicher runde (kicker immer in hand?)
-// kicker falsch verstanden
-highCard          0     +     highCard*13 + lowCard
-pair            182     +     pair*13 + kicker
-2 pair          364     +     highpair*13^2 + lowpair*13 + kicker
-3 of a kind    2743     +     3's*13 + kicker
-straight       2925     +     top end
-flush          2938     +     suited kicker
-full house     2951     +     3's*13^2 + pair*13 + kicker
-4 of a kind    5330     +     4's*13 + kicker
-straight flush 5512     +     top end
