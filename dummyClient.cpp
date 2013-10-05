@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 #include <cstring>
 
 #include "client.h"

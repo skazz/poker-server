@@ -1,18 +1,5 @@
+implement spectator mode
+
 write simple cli interface for client (later qt?)
 
-test game loop
-
-test handEvaluator
-
-logfile
-
-just notifiy about changes? (single function)
-
-
-read function
-   add timeout
-   check sanity
-   own buffer per seat?
-
-
-use /dev/random
+use /dev/random?!

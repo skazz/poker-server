@@ -12,11 +12,14 @@ server::server(const char *port, int playerCount) {
    playersLeft = playerCount;
 
    startingChips = 20000;
-   smallBlind = 4000;
-   bigBlind = 8000;
+   smallBlind = 1000;
+   bigBlind = 2000;
 
    for(int8_t i = 0; i < playerCount; i++)
       player[i] = seat(i, startingChips);
+
+   log.setLogLevel(VERBOSE);
+   log.setDisplayMessages(true);
 
 }
 
@@ -51,6 +54,11 @@ int server::broadcast(unsigned char *msg, int msg_len) {
 
 int server::readNext(int8_t n) {
 
+   struct timeval tv;
+   fd_set readfds;
+
+   time_t start, now;
+
    int fd = player[n].getFD();
    unsigned char buf[32], tmp_buf[64], *p;
    int buf_len = sizeof buf;
@@ -63,57 +71,71 @@ int server::readNext(int8_t n) {
    unsigned char s[16];
    int msg_len;
 
-   while((bytes_received = recv(fd, buf, buf_len, 0)) > 0) {
-      //fprintf(stdout, "Received %d Bytes\n", bytes_received);
+   time(&start);
+   time(&now);
 
-      memcpy(tmp_buf + tmp_offset, buf, bytes_received);
-      tmp_offset += bytes_received;
-      if(bytes_received < 1)
-         continue;
+   FD_ZERO(&readfds);
+   FD_SET(fd, &readfds);
 
-      size = *tmp_buf;
+   while(difftime(now, start) < 45) {
 
-      // TODO: while no success..., timeout
-      if(tmp_offset >= size + 1) {
-         //fprintf(stdout, "Read %d Bytes\n", size + 1);
+      tv.tv_sec = 45 - difftime(start, now);
+      tv.tv_usec = 0;
+      select(fd+1, &readfds, NULL, NULL, &tv);
 
-         p = tmp_buf + 1;
+      if(FD_ISSET(fd, &readfds)) {
+         if((bytes_received = recv(fd, buf, buf_len, 0)) > 0) {
 
-         action = *p++;
+            memcpy(tmp_buf + tmp_offset, buf, bytes_received);
+            tmp_offset += bytes_received;
+            if(bytes_received < 1)
+               continue;
 
-         switch(action) {
-         case 0:
-            unpack(p, "s", &s);
-            player[n].setName(s);
-            msg_len = pack(msg, "bbs", 11, player[n].getNumber(), s);
-            if(broadcast(msg, msg_len) == -1)
-               fprintf(stderr, "error broadcasting name\n");
-            
-            fprintf(stdout, "%s joined\n", player[n].getName());
-            return 1;
-         case 1:
-            return playerFolded(n);
-         case 2:
-            unpack(p, "h", &d);
-            return playerRaised(n, d);
-         case 3:
-            return playerCalled(n);
-         case 4: 
-            return playerChecked(n);
-         case 5:
-            return playerAllin(n);
-         case 6:
-            return playerBailed(n);
-         default:
-            return -1;
-         }
-
-         tmp_offset -= (size + 1);
-         memmove(tmp_buf, tmp_buf + size + 1, tmp_offset);
-
-         if(tmp_offset > 0)
             size = *tmp_buf;
+
+            // TODO: while no success..., timeout
+            if(tmp_offset >= size + 1) {
+
+               p = tmp_buf + 1;
+
+               action = *p++;
+
+               switch(action) {
+               case 0:
+                  unpack(p, "s", &s);
+                  player[n].setName(s);
+                  msg_len = pack(msg, "bbs", 11, player[n].getNumber(), s);
+                  if(broadcast(msg, msg_len) == -1)
+                     log.log(ERROR, "ERROR: broadcasting name");
+                  
+                  log.log(SERVER, "%s joined", player[n].getName());
+                  return 1;
+               case 1:
+                  return playerFolded(n);
+               case 2:
+                  unpack(p, "h", &d);
+                  return playerRaised(n, d);
+               case 3:
+                  return playerCalled(n);
+               case 4: 
+                  return playerChecked(n);
+               case 5:
+                  return playerAllin(n);
+               case 6:
+                  return playerBailed(n);
+               default:
+                  return -1;
+               }
+
+               tmp_offset -= (size + 1);
+               memmove(tmp_buf, tmp_buf + size + 1, tmp_offset);
+
+               if(tmp_offset > 0)
+                  size = *tmp_buf;
+            }
+         }
       }
+      time(&now);
    }
 
    return -1;
@@ -125,7 +147,7 @@ int server::startGame() {
    int client[playerCount];
 
    if((setup(client, playerCount, port)) == -1) {
-      fprintf(stderr, "socket error\n");
+      log.log(ERROR, "ERROR: socket error");
       return -1;
    }
 
@@ -136,7 +158,7 @@ int server::startGame() {
    // get names
    for(int i = 0; i < playerCount; i++) {
       if(readNext(i) == -1)
-         fprintf(stderr, "error reading names\n");
+         log.log(ERROR, "ERROR: reading names");
    }
 
 
@@ -145,7 +167,7 @@ int server::startGame() {
    int msg_len;
    msg_len = pack(msg, "bb", 10, playerCount);
    if(broadcast(msg, msg_len) == -1)
-      fprintf(stderr, "error broadcasting playercount\n");
+      log.log(ERROR, "ERROR: broadcasting playercount");
 
 
    
@@ -155,14 +177,14 @@ int server::startGame() {
    for(int i = 0; i < playerCount; i++) {
       msg_len = pack(msg, "bb", 12, player[i].getNumber());
       if(sendAll(i, msg, msg_len) == -1)
-         fprintf(stderr, "error assigning seat to %d\n", i);
+         log.log(ERROR, "ERROR: assigning seat to %d", i);
 
    }
 
    // broadcast starting chips
    msg_len = pack(msg, "bh", 15, startingChips);
    if(broadcast(msg, msg_len) == -1)
-      fprintf(stderr, "error broadcasting starting chips\n");
+      log.log(ERROR, "ERROR: broadcasting starting chips");
 
    // commence
    return gameLoop();
@@ -181,8 +203,6 @@ int server::gameLoop() {
    int tmp, tmppot, minBet, count, sidepot, distributedpot;
 
    deckC deck;
-   int8_t flop[3];
-   int8_t river, turn;
    int8_t board[5];
    int8_t tmpHole[2];
    int winner[playerCount];
@@ -206,7 +226,7 @@ int server::gameLoop() {
       if(blindsChanged) {
          msg_len = pack(msg, "bhh", 20, smallBlind, bigBlind);
          if(broadcast(msg, msg_len) == -1)
-            fprintf(stderr, "error broadcasting blinds\n");
+            log.log(ERROR, "ERROR: broadcasting blinds");
          blindsChanged = false;
       }
 
@@ -214,13 +234,13 @@ int server::gameLoop() {
       // tell dealer, small, big blinds (broadcast?)
       msg_len = pack(msg, "bb", 21, player[dealer].getNumber());
       if(broadcast(msg, msg_len) == -1)
-         fprintf(stderr, "error broadcasting dealer");
+         log.log(ERROR, "ERROR: broadcasting dealer");
 
 
       // small blind(check if enough chips)
       msg_len = pack(msg, "bb", 22, player[(dealer + 1) % playersLeft].getNumber());
       if(broadcast(msg, msg_len) == -1)
-         fprintf(stderr, "error broadcasting small blind");
+         log.log(ERROR, "ERROR: broadcasting small blind");
 
       if(player[(dealer + 1) % playersLeft].getRemainingChips() <= smallBlind) {
          playerAllin((dealer + 1) % playersLeft);
@@ -231,7 +251,7 @@ int server::gameLoop() {
       // big blind(check if enough chips)
       msg_len = pack(msg, "bb", 23, player[(dealer + 2) % playersLeft].getNumber());
       if(broadcast(msg, msg_len) == -1)
-            fprintf(stderr, "error broadcasting big blind");
+            log.log(ERROR, "ERROR: broadcasting big blind");
 
       if(player[(dealer + 2) % playersLeft].getRemainingChips() <= bigBlind) {
          playerAllin((dealer + 2) % playersLeft);
@@ -256,7 +276,9 @@ int server::gameLoop() {
       for(int i = 0; i < playersLeft; i++) {
          msg_len = pack(msg, "bbb", 30, player[i].getHoleCard(0), player[i].getHoleCard(1));
          if(sendAll(i, msg, msg_len) == -1)
-            fprintf(stderr, "error sending cards to %d\n", i);
+            log.log(ERROR, "ERROR: sending cards to %d", i);
+
+         log.log(HAND, "Player %d has %d %d", player[i].getNumber(), player[i].getHoleCard(0), player[i].getHoleCard(1));
       }
 
       // betting round 1
@@ -282,13 +304,14 @@ int server::gameLoop() {
       // flop
       deck.getCard();
       for(int i = 0; i < 3; i++) {
-         flop[i] = deck.getCard();
-         board[i] = flop[i];
+         board[i] = deck.getCard();;
       }
 
-      msg_len = pack(msg, "bbbb", 31, flop[0], flop[1], flop[2]);
+      msg_len = pack(msg, "bbbb", 31, board[0], board[1], board[2]);
       if(broadcast(msg, msg_len) == -1)
-         fprintf(stderr, "error broadcasting flop\n");
+         log.log(ERROR, "ERROR: broadcasting flop");
+
+      log.log(HAND, "Flop: %d %d %d", board[0], board[1], board[2]);
 
       // betting round 2
       if(!cardsOnTable) {
@@ -315,11 +338,12 @@ int server::gameLoop() {
 
       // turn
       deck.getCard();
-      turn = deck.getCard();
-      board[3] = turn;
+      board[3] = deck.getCard();;
       msg_len = pack(msg, "bb", 32, turn);
       if(broadcast(msg, msg_len) == -1)
-         fprintf(stderr, "error broadcasting turn\n");
+         log.log(ERROR, "ERROR: broadcasting turn");
+
+      log.log(HAND, "Turn: %d", board[3]);
 
       // betting round 3
       if(!cardsOnTable) {
@@ -346,11 +370,12 @@ int server::gameLoop() {
 
       // river
       deck.getCard();
-      river = deck.getCard();
-      board[4] = river;
-      msg_len = pack(msg, "bb", 33, river);
+      board[4] = deck.getCard();
+      msg_len = pack(msg, "bb", 33, board[4]);
       if(broadcast(msg, msg_len) == -1)
-         fprintf(stderr, "error broadcasting river\n");
+         log.log(ERROR, "ERROR: broadcasting river");
+
+      log.log(HAND, "River: %d", board[4]);
 
 
       // betting round 4
@@ -401,11 +426,12 @@ int server::gameLoop() {
       }
 
       for(int i = 0; i < playersLeft; i++)
-         fprintf(stdout, "Player %d has %d\n", player[winner[i]].getNumber(), handrank[winner[i]]);
+         log.log(HAND, "Player %d has %d", player[winner[i]].getNumber(), handrank[winner[i]]);
 
 
       // distribute pot
       pot = getPot();
+      log.log(POT, "Pot: %d", pot);
 
       tmp = 0;
       sidepot = 0;
@@ -457,7 +483,6 @@ int server::gameLoop() {
          int k = 0;
          j = first;
 
-         fprintf(stdout, "best hand in pot %d %d times\n", handrank[winner[first]], count);
          while(k < count) {
             if(player[winner[j]].getCurrentBet() >= tmp) {
                playerWon(winner[j], sidepot / count);
@@ -473,11 +498,11 @@ int server::gameLoop() {
 
       // eliminate players (move eliminated players to the end)
       for(int i = 0; i < playersLeft; i++) {
-         fprintf(stdout, "Player %"PRId8" has %"PRId16" chips\n", player[i].getNumber(), player[i].getRemainingChips());
+         log.log(POT, "Player %d has %d chips", player[i].getNumber(), player[i].getRemainingChips());
          if(player[i].getRemainingChips() == 0) {
             msg_len = pack(msg, "bb", 13, player[i].getNumber());
             if(broadcast(msg, msg_len) == -1)
-               fprintf(stderr, "error broadcasting eliminated player");
+               log.log(ERROR, "ERROR: broadcasting eliminated player");
             eliminate(i);
             i--; // BAAAAAHH
             playersLeft--;
@@ -494,25 +519,42 @@ int server::gameLoop() {
 
 int server::bettingRound() {
    int count = 0;
-   int tries = 0;
    int success = -1;
 
    while(getPlayersInHand() > 1 && (lastPlayerRaised != turn || count < playersLeft)) {
       if(!player[turn].hasFolded() && !player[turn].isAllin()) {
-         tries = 0;
-         do {
-            requestAction(turn);
-            tries++;
-         }
-         while((success = readNext(turn) != 0) && tries < 3);
-
-         if(success != 0)
+         // empty socket, only latest action counts
+         clear(turn);
+         requestAction(turn);
+         if((success = readNext(turn)) != 0)
             playerFolded(turn);
 
       }
 
       turn = (turn + 1) % playersLeft;
       count++;
+   }
+   return 0;
+}
+
+int server::clear(int8_t n) {
+   int fd = player[n].getFD();
+   fd_set readfds;
+   struct timeval tv;
+   tv.tv_sec = 0;
+   tv.tv_usec = 0;
+
+   FD_ZERO(&readfds);
+   FD_SET(fd, &readfds);
+   bool empty = false;
+
+   while(!empty) {
+      empty = true;
+      select(fd+1, &readfds, NULL, NULL, &tv);
+      if(FD_ISSET(fd, &readfds)) {
+         recv(fd, NULL, 64, 0);
+         empty = false;
+      }
    }
    return 0;
 }
@@ -560,40 +602,38 @@ int server::requestAction(int8_t n) {
    unsigned char msg[2];
    int msg_len = pack(msg, "b", 40);
    if(sendAll(n, msg, msg_len) == -1) {
-      fprintf(stderr, "error sending request to %"PRId8"\n", n);
+      log.log(ERROR, "ERROR: sending request to %d", n);
       return -1;
    }
    return 0;
 }
 
 int server::playerFolded(int8_t n) {
-   fprintf(stdout, "Player %"PRId8" folded\n", player[n].getNumber());
+   log.log(VERBOSE, "Player %d folded", player[n].getNumber());
 
    player[n].folds();
 
    unsigned char msg[3];
    int msg_len = pack(msg, "bb", 41, player[n].getNumber());
    if(broadcast(msg, msg_len) == -1)
-      fprintf(stderr, "error broadcasting fold\n");
+      log.log(ERROR, "ERROR: broadcasting fold");
    return 0;
 }
 
 int server::playerRaised(int8_t n, int16_t a) {
-   fprintf(stdout, "Player %"PRId8" tried to raise by %"PRId16"\n", player[n].getNumber(), a);
-
    unsigned char msg[5];
    int msg_len;
    if(a < minimumBet) {
       msg_len = pack(msg, "b", 3);
       if(sendAll(n, msg, msg_len) == -1)
-         fprintf(stderr, "error sending \"bet too low\" to %"PRId8"\n", player[n].getNumber());
+         log.log(ERROR, "ERROR: sending \"bet too low\" to %d", player[n].getNumber());
       return -1;
    } else if((toCall - player[n].getCurrentBet() + a) > player[n].getRemainingChips()) {
       return playerAllin(n);
    }
 
 
-   fprintf(stdout, "Player %"PRId8" raised by %"PRId16"\n", player[n].getNumber(), a);
+   log.log(VERBOSE, "Player %d raised by %d", player[n].getNumber(),  a);
 
    minimumBet = a;
    toCall += a;
@@ -602,25 +642,24 @@ int server::playerRaised(int8_t n, int16_t a) {
 
    msg_len = pack(msg, "bbh", 42, player[n].getNumber(), a);
    if(broadcast(msg, msg_len) == -1)
-      fprintf(stderr, "error broadcasting raise\n");
+      log.log(ERROR, "ERROR: broadcasting raise");
    return 0;
 }
 
 int server::playerCalled(int8_t n) {
-   fprintf(stdout, "Player %"PRId8" tried to call\n", player[n].getNumber());
 
    if(toCall - player[n].getCurrentBet() >= player[n].getRemainingChips())
       return playerAllin(n);
 
 
-   fprintf(stdout, "Player %"PRId8" called\n", player[n].getNumber());
+   log.log(VERBOSE, "Player %d called", player[n].getNumber());
 
    player[n].bets(toCall - player[n].getCurrentBet());
 
    unsigned char msg[3];
    int msg_len = pack(msg, "bb", 43, player[n].getNumber());
    if(broadcast(msg, msg_len) == -1)
-      fprintf(stderr, "error broadcasting call\n");
+      log.log(ERROR, "ERROR: broadcasting call");
    return 0;
 }
 
@@ -628,41 +667,41 @@ int server::playerChecked(int8_t n) {
    if(player[n].getCurrentBet() < toCall)
       return playerCalled(n);
 
-   fprintf(stdout, "Player %"PRId8" checked\n", player[n].getNumber());
+   log.log(VERBOSE, "Player %d checked", player[n].getNumber());
 
    unsigned char msg[3];
    int msg_len = pack(msg, "bb", 44, player[n].getNumber());
    if(broadcast(msg, msg_len) == -1)
-      fprintf(stderr, "error broadcasting check\n");
+      log.log(ERROR, "ERROR: broadcasting check");
    return 0;
 }
 
 int server::playerAllin(int8_t n) {
-   fprintf(stdout, "Player %"PRId8" is allin\n", player[n].getNumber());
+   log.log(VERBOSE, "Player %d is allin", player[n].getNumber());
 
    player[n].allin();
 
    unsigned char msg[5];
    int msg_len = pack(msg, "bbh", 45, player[n].getNumber(), player[n].getCurrentBet());
    if(broadcast(msg, msg_len) == -1)
-      fprintf(stderr, "error broadcasting allin\n");
+      log.log(ERROR, "ERROR: broadcasting allin");
    return 0;
 }
 
 int server::playerBailed(int8_t n) {
-   fprintf(stdout, "Player %"PRId8" bailed\n", player[n].getNumber());
+   log.log(VERBOSE, "Player %d bailed", player[n].getNumber());
 
    removePlayer(n);
 
    unsigned char msg[3];
    int msg_len = pack(msg, "bb", 14, player[n].getNumber());
    if(broadcast(msg, msg_len) == -1)
-      fprintf(stderr, "error broadcasting bail\n");
+      log.log(ERROR, "ERROR: broadcasting bail");
    return 0;
 }
 
 int server::playerWon(int8_t n, int16_t amount) {
-   fprintf(stdout, "player %d bet %d wins %d\n", player[n].getNumber(), player[n].getCurrentBet(), amount);
+   log.log(POT, "Player %d wins %d", player[n].getNumber(), amount);
    player[n].wins(amount);
 
    unsigned char msg[5];
@@ -680,6 +719,7 @@ void server::removePlayer(int8_t n) {
 }
 
 void server::eliminate(int8_t n) {
+   log.log(POT, "Player %d has been eliminated", player[n].getNumber());
    seat tmp = player[n];
    for(int i = n; i < playerCount - 1; i++)
       player[i] = player[i+1];
@@ -699,8 +739,6 @@ int main(int argc, char *argv[]) {
          if(playerCount > 8 || playerCount < 2) {
             playerCount = 3;
          }
-      } else {
-         fprintf(stderr, "unrecognized option %s\n", argv[i]);
       }
    }
 
