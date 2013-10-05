@@ -2,7 +2,7 @@ CC = g++
 DEBUG = -g
 CFLAGS = -Wall -c $(DEBUG)
 LFLAGS = -Wall $(DEBUG)
-OBJ = server.o pack.o seat.o deckC.o handEvaluator.o
+OBJ = server.o pack.o log.o seat.o deckC.o handEvaluator.o
 DEPS = $(OBJ) socketHandler.o
 
 
