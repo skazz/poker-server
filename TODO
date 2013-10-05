@@ -1,3 +1,5 @@
+implement spectator mode
+
 write simple cli interface for client (later qt?)
 
 use /dev/random?!
