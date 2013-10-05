@@ -1,7 +1,6 @@
 #include <inttypes.h>
 #include <cstdlib>
 #include <time.h>
-#include <string.h>
 
 class deckC {
 
@@ -10,7 +9,7 @@ public:
 
    int8_t getCard();
    
-   int shuffle();
+   void shuffle();
 
 private:
    int8_t cards[52];
