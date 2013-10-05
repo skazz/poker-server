@@ -18,7 +18,7 @@ server::server(const char *port, int playerCount) {
    for(int8_t i = 0; i < playerCount; i++)
       player[i] = seat(i, startingChips);
 
-   log.setLogLevel(VERBOSE);
+   log.setLogLevel(HAND);
    log.setDisplayMessages(true);
 
 }
@@ -338,8 +338,8 @@ int server::gameLoop() {
 
       // turn
       deck.getCard();
-      board[3] = deck.getCard();;
-      msg_len = pack(msg, "bb", 32, turn);
+      board[3] = deck.getCard();
+      msg_len = pack(msg, "bb", 32, board[3]);
       if(broadcast(msg, msg_len) == -1)
          log.log(ERROR, "ERROR: broadcasting turn");
 
