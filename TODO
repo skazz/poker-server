@@ -1,7 +1,5 @@
 add card names to log
 
-add wait before next round (ready)
-
 move socket handler to own class
 
 implement spectator mode

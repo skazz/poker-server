@@ -22,6 +22,8 @@ public:
 protected:
 
    // communication to server
+   int ready();
+
    int fold();
 
    int raise(int16_t amount);
@@ -41,7 +43,7 @@ protected:
    */
    virtual void placeBet() = 0; // <- needed!
 
-
+   virtual void nextRound() { ready(); }; // tell server when you are ready 45s timeout
    // hooks for notifications from server
 
    virtual void setHolecards(int8_t c1, int8_t c2) {};

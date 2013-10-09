@@ -50,6 +50,8 @@ private:
 
    int gameLoop();
 
+   int waitForNextRound();
+
    int bettingRound(int n);
 
    int getPot();

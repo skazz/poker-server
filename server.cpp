@@ -52,6 +52,93 @@ int server::broadcast(unsigned char *msg, int msg_len) {
    return 0;
 }
 
+int server::waitForNextRound() {
+   struct timeval tv;
+   fd_set readfds, master;
+
+   time_t start, now;
+
+   unsigned char buf[32], tmp_buf[64], *p;
+   int buf_len = sizeof buf;
+   int tmp_offset = 0;
+   int bytes_received = 0;
+   int8_t size, action;
+
+   unsigned char msg[16];
+   int msg_len, maxFD;
+
+   int playersReady = 0;
+
+   // ask players
+   log.log(VERBOSE, "Waiting for players");
+   msg_len = pack(msg, "b", 19);
+   if(broadcast(msg, msg_len) == -1)
+      log.log(ERROR, "ERROR: broadcasting ready?");
+
+
+   FD_ZERO(&readfds);
+   FD_ZERO(&master);
+   maxFD = -1;
+
+   for(int i = 0; i < playersLeft; i++) {
+      FD_SET(player[i].getFD(), &master);
+      if(player[i].getFD() > maxFD)
+         maxFD = player[i].getFD();
+   }
+
+   time(&start);
+   time(&now);
+
+   while(difftime(now, start) < 45 && playersReady < playersLeft) {
+      tv.tv_sec = 45 - difftime(start, now);
+      tv.tv_usec = 0;
+
+      readfds = master;
+
+      if(select(maxFD + 1, &readfds, NULL, NULL, &tv) == -1)
+         log.log(ERROR, "ERROR: selecting");
+
+
+      for(int i = 0; i < maxFD + 1; i++) {
+         if(FD_ISSET(i, &readfds)) {
+            if((bytes_received = recv(i, buf, buf_len, 0)) > 0) {
+
+               memcpy(tmp_buf + tmp_offset, buf, bytes_received);
+               tmp_offset += bytes_received;
+               if(bytes_received < 1)
+                  continue;
+
+               size = *tmp_buf;
+
+               if(tmp_offset >= size + 1) {
+
+                  p = tmp_buf + 1;
+
+                  action = *p++;
+
+                  switch(action) {
+                  case 10:
+                     FD_CLR(i, &master);
+                     playersReady++;
+                     log.log(VERBOSE, "socket %d ready", i);
+                     break;
+                  }
+
+                  tmp_offset -= (size + 1);
+                  memmove(tmp_buf, tmp_buf + size + 1, tmp_offset);
+
+                  if(tmp_offset > 0)
+                     size = *tmp_buf;
+               }
+            }
+         }
+      }
+      time(&now);
+   }
+
+   return -1;
+}
+
 int server::readNext(int8_t n) {
 
    struct timeval tv;
@@ -212,6 +299,8 @@ int server::gameLoop() {
 
 
    while(playersLeft > 1) {
+
+      waitForNextRound();
 
       // shuffle deck
       deck.shuffle();

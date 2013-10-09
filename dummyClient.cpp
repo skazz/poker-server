@@ -14,6 +14,8 @@ public:
 protected:
    void placeBet();
 
+   void nextRound();
+
    void setHolecards(int8_t c1, int8_t c2);
 
    void setFlop(int8_t c1, int8_t c2, int8_t c3);
@@ -35,6 +37,11 @@ private:
 
 void dummyClient::placeBet() {
    check();
+}
+
+void dummyClient::nextRound() {
+   fprintf(stdout, "Next Round\n");
+   ready();
 }
 
 void dummyClient::setHolecards(int8_t c1, int8_t c2) {
