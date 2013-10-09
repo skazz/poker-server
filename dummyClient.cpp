@@ -66,10 +66,10 @@ void dummyClient::playerWon(int8_t n, int16_t amount) {
 }
 
 string dummyClient::getCardName(int8_t c) {
-   string suit[4] = { string("Spades"), string("Clubs"), string("Diamonds"), string("Hearts") };
+   string suit[4] = { string("Spades"), string("Clubs"), string("Hearts"), string("Diamonds") };
    string value[13] = { string("Two"), string("Three"), string("Four"), string("Five"), string("Six"), string("Seven"), string("Eight"), string("Nine"), string("Ten"), string("Jack"), string("Queen"), string("King"), string("Ace") };
 
-   return value[c % 13] + string(" of ") + suit[c / 13];
+   return value[c / 4] + string(" of ") + suit[c % 4];
 }
 
 int main(int argc, char *argv[]) {

@@ -1,6 +1,3 @@
-change card representation to 2s2c2h2d3s3c...
-   %mod 4 == >> 2 faster
-
 add card names to log
 
 add wait before next round (ready)
