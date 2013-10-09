@@ -18,7 +18,7 @@ server::server(const char *port, int playerCount) {
    for(int8_t i = 0; i < playerCount; i++)
       player[i] = seat(i, startingChips);
 
-   log.setLogLevel(HAND);
+   log.setLogLevel(VERBOSE);
    log.setDisplayMessages(true);
 
 }
@@ -93,7 +93,6 @@ int server::readNext(int8_t n) {
 
             size = *tmp_buf;
 
-            // TODO: while no success..., timeout
             if(tmp_offset >= size + 1) {
 
                p = tmp_buf + 1;
@@ -196,6 +195,7 @@ int server::gameLoop() {
    int msg_len;
 
    int dealer = rand() % playerCount; // rng
+   int turn;
    bool blindsChanged = true;
    bool cardsOnTable = false;
 
@@ -263,8 +263,6 @@ int server::gameLoop() {
       minimumBet = bigBlind;
       toCall = bigBlind;
       cardsOnTable = false;
-      lastPlayerRaised = (dealer + 2) % playersLeft; // still weird reset counter in betting round
-
 
       // deal cards
       for(int i = 0; i < 2; i++) {
@@ -283,7 +281,7 @@ int server::gameLoop() {
 
       // betting round 1
       turn = (dealer + 3) % playersLeft;
-      bettingRound();
+      bettingRound(turn);
 
       // check remaining players / allins
       if(getPlayersInHand() <= 1) {
@@ -316,7 +314,7 @@ int server::gameLoop() {
       // betting round 2
       if(!cardsOnTable) {
          turn = (dealer + 1) % playersLeft;
-         bettingRound();
+         bettingRound(turn);
       }
 
       // check remaining players / allins
@@ -348,7 +346,7 @@ int server::gameLoop() {
       // betting round 3
       if(!cardsOnTable) {
          turn = (dealer + 1) % playersLeft;
-         bettingRound();
+         bettingRound(turn);
       }
 
        // check remaining players / allins
@@ -381,7 +379,7 @@ int server::gameLoop() {
       // betting round 4
       if(!cardsOnTable) {
          turn = (dealer + 1) % playersLeft;
-         bettingRound();
+         bettingRound(turn);
       }
 
        // check remaining players / allins
@@ -517,22 +515,27 @@ int server::gameLoop() {
 
 }
 
-int server::bettingRound() {
+int server::bettingRound(int n) {
    int count = 0;
    int success = -1;
+   int turn = n;
 
-   while(getPlayersInHand() > 1 && (lastPlayerRaised != turn || count < playersLeft)) {
+   while(getPlayersInHand() > 1 && count < playersLeft) {
+      success = 0;
       if(!player[turn].hasFolded() && !player[turn].isAllin()) {
          // empty socket, only latest action counts
          clear(turn);
          requestAction(turn);
-         if((success = readNext(turn)) != 0)
+         if((success = readNext(turn)) == -1)
             playerFolded(turn);
 
       }
 
       turn = (turn + 1) % playersLeft;
-      count++;
+      if(success == 2)
+         count = 1;
+      else
+         count++;
    }
    return 0;
 }
@@ -620,30 +623,38 @@ int server::playerFolded(int8_t n) {
    return 0;
 }
 
+// return 2 if raising success
 int server::playerRaised(int8_t n, int16_t a) {
    unsigned char msg[5];
-   int msg_len;
-   if(a < minimumBet) {
-      msg_len = pack(msg, "b", 3);
-      if(sendAll(n, msg, msg_len) == -1)
-         log.log(ERROR, "ERROR: sending \"bet too low\" to %d", player[n].getNumber());
-      return -1;
-   } else if((toCall - player[n].getCurrentBet() + a) > player[n].getRemainingChips()) {
+   int msg_len, tmp;
+
+   if(toCall - player[n].getCurrentBet() >= player[n].getRemainingChips())
       return playerAllin(n);
+
+   tmp = a;
+
+   if(tmp < minimumBet) {
+      if((toCall - player[n].getCurrentBet() + minimumBet) >= player[n].getRemainingChips()) {
+         return playerAllin(n);
+      } else {
+         tmp = minimumBet;
+      }
    }
+
+   if(toCall - player[n].getCurrentBet() + tmp >= player[n].getRemainingChips())
+      return playerAllin(n);
 
 
    log.log(VERBOSE, "Player %d raised by %d", player[n].getNumber(),  a);
 
-   minimumBet = a;
-   toCall += a;
+   minimumBet = tmp;
+   toCall += tmp;
    player[n].bets(toCall - player[n].getCurrentBet());
-   lastPlayerRaised = n;
 
    msg_len = pack(msg, "bbh", 42, player[n].getNumber(), a);
    if(broadcast(msg, msg_len) == -1)
       log.log(ERROR, "ERROR: broadcasting raise");
-   return 0;
+   return 2;
 }
 
 int server::playerCalled(int8_t n) {
@@ -677,7 +688,19 @@ int server::playerChecked(int8_t n) {
 }
 
 int server::playerAllin(int8_t n) {
+   int raised = 0;
+   int tmp;
+
    log.log(VERBOSE, "Player %d is allin", player[n].getNumber());
+
+   if(toCall - player[n].getCurrentBet() < player[n].getRemainingChips()) {
+      raised = 2;
+      // added to Pot = remainingChips - (toCall - currentBet)
+      tmp = player[n].getRemainingChips() - (toCall - player[n].getCurrentBet());
+      toCall += tmp;
+      if(tmp > minimumBet)
+         minimumBet = tmp;
+   }
 
    player[n].allin();
 
@@ -685,7 +708,7 @@ int server::playerAllin(int8_t n) {
    int msg_len = pack(msg, "bbh", 45, player[n].getNumber(), player[n].getCurrentBet());
    if(broadcast(msg, msg_len) == -1)
       log.log(ERROR, "ERROR: broadcasting allin");
-   return 0;
+   return raised;
 }
 
 int server::playerBailed(int8_t n) {

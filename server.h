@@ -50,7 +50,7 @@ private:
 
    int gameLoop();
 
-   int bettingRound();
+   int bettingRound(int n);
 
    int getPot();
 
@@ -68,6 +68,6 @@ private:
 
    int startingChips, smallBlind, bigBlind, playersLeft, playerCount;
 
-   int pot, minimumBet, toCall, lastPlayerRaised, turn;
+   int pot, minimumBet, toCall, lastPlayerRaised;
 
 };
