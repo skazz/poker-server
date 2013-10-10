@@ -34,8 +34,8 @@ int handEvaluator::setBoard(int8_t *_board) {
 
 
    for(int i = 0; i < 5; i++) {
-      suit[board[i] / 13]++;
-      value[board[i] % 13]++;
+      suit[board[i] % 4]++;
+      value[board[i] / 4]++;
    }
 
    return 0;
@@ -49,15 +49,15 @@ int handEvaluator::getHandrank(int8_t *_holeCard) {
    holeCard = _holeCard;
    
    for(int i = 0; i < 2; i++) {
-      suit[holeCard[i] / 13]++;
-      value[holeCard[i] % 13]++;
+      suit[holeCard[i] % 4]++;
+      value[holeCard[i] / 4]++;
    }
 
    handrank = evaluate();
 
    for(int i = 0; i < 2; i++) {
-      suit[holeCard[i] / 13]--;
-      value[holeCard[i] % 13]--;
+      suit[holeCard[i] % 4]--;
+      value[holeCard[i] / 4]--;
    }
 
    return handrank;
@@ -85,12 +85,12 @@ int handEvaluator::evaluate() {
             tmp[j] = 0;
 
          for(int j = 0; j < 5; j++)
-            if(board[j] / 13 == i)
-               tmp[board[j] % 13] = 1;
+            if(board[j] % 4 == i)
+               tmp[board[j] / 4] = 1;
 
          for(int j = 0; j < 2; j++)
-            if(holeCard[j] / 13 == i)
-               tmp[holeCard[j] % 13] = 1;
+            if(holeCard[j] % 4 == i)
+               tmp[holeCard[j] / 4] = 1;
 
          int count = 0;
          int flushIndex = 0;

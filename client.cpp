@@ -30,6 +30,14 @@ int client::connectToServer(const char *remoteHost, const char *port) {
    return gameLoop();
 }
 
+int client::ready()
+{
+   unsigned char msg[2];
+   int msg_len;
+
+   msg_len = pack(msg, "b", 10);
+   return sendAll(sockfd, msg, msg_len);
+}
 
 int client::fold() {
    unsigned char msg[2];
@@ -91,6 +99,9 @@ int client::read(unsigned char *buf) {
    switch(action) {
    case 40:
       placeBet();
+      return 0;
+   case 19:
+      nextRound();
       return 0;
    case 0:
       //fprintf(stdout, "Did well\n");

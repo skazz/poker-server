@@ -1,6 +1,5 @@
-value order two to Ace 0 .. 12
-suit i * 13
-card = suit * 13 + value
+card representation = 2s 2c 2h 2d  3s 3c ... Ad, [0 .. 51]
+card = 4*value + suit
 
 // beste hand aus 5 karten inkl kicker
 highCard             0  +  kicker[0]*13^4 + kicker[1]*13^3 + kicker[2]*13^2 + kicker[3]*13^1 + kicker[4]*13^0

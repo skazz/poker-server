@@ -6,6 +6,7 @@ client:                    [action]             [byte]
    check                   -                                         4
    allin                   -                                         5
    bail                    -                                         6
+   ready                   -                                         10
 
 server:                    [action]             [byte]
    playercount             [count]              [byte]               10
@@ -14,6 +15,8 @@ server:                    [action]             [byte]
    player eliminated       [seat]               [byte]               13
    player left             [seat]               [byte]               14
    set starting money      [amount]             [short]              15
+   playerReady             [seat]               [byte]               18
+   askIfReady              -                                         19
    set blinds              [small][big]         [short][short]       20
    is dealer               [seat]               [short]              21
    is small blind          [seat]               [short]              22

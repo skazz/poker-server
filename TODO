@@ -1,5 +1,9 @@
+fix pot distribution
+   int16_t max ~32 000 need 160 000
+   easy solution cap starting chips to 32 000 / 8 = 4000 -> 2000
+
+remove disconnected players
+
+move socket handler to own class
+
 implement spectator mode
-
-write simple cli interface for client (later qt?)
-
-use /dev/random?!
