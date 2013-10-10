@@ -11,9 +11,9 @@ server::server(const char *port, int playerCount) {
    this->playerCount = playerCount;
    playersLeft = playerCount;
 
-   startingChips = 20000;
-   smallBlind = 1000;
-   bigBlind = 2000;
+   startingChips = 2000;
+   smallBlind = 100;
+   bigBlind = 200;
 
    for(int8_t i = 0; i < playerCount; i++)
       player[i] = seat(i, startingChips);
@@ -72,8 +72,11 @@ int server::waitForNextRound() {
    // ask players
    log.log(VERBOSE, "Waiting for players");
    msg_len = pack(msg, "b", 19);
-   if(broadcast(msg, msg_len) == -1)
-      log.log(ERROR, "ERROR: broadcasting ready?");
+   for(int i = 0; i < playersLeft; i++)
+      if(sendAll(i, msg, msg_len) == -1)
+         log.log(ERROR, "ERROR: asking %d if ready", i);
+   //if(broadcast(msg, msg_len) == -1)
+   //   log.log(ERROR, "ERROR: broadcasting ready?");
 
 
    FD_ZERO(&readfds);
@@ -300,17 +303,6 @@ int server::gameLoop() {
 
    while(playersLeft > 1) {
 
-      waitForNextRound();
-
-      // shuffle deck
-      deck.shuffle();
-
-
-      // reset seats
-      for(int i = 0; i < playersLeft; i++)
-         player[i].newRound();
-
-
       // broadcast new blinds
       if(blindsChanged) {
          msg_len = pack(msg, "bhh", 20, smallBlind, bigBlind);
@@ -319,6 +311,19 @@ int server::gameLoop() {
          blindsChanged = false;
       }
 
+
+      // shuffle deck
+      deck.shuffle();
+
+      // reset seats
+      for(int i = 0; i < playersLeft; i++)
+         player[i].newRound();
+
+      
+      // wait for players to be ready
+      waitForNextRound();
+
+      
 
       // tell dealer, small, big blinds (broadcast?)
       msg_len = pack(msg, "bb", 21, player[dealer].getNumber());
