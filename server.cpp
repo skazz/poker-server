@@ -388,6 +388,7 @@ int server::gameLoop() {
                   playerWon(i, getPot());
                }
             }
+            dealer = (dealer + 1) % playersLeft;
             continue;
          }
       }
@@ -424,6 +425,7 @@ int server::gameLoop() {
                   playerWon(i, getPot());
                }
             }
+            dealer = (dealer + 1) % playersLeft;
             continue;
          }
       }
@@ -456,6 +458,7 @@ int server::gameLoop() {
                   playerWon(i, getPot());
                }
             }
+            dealer = (dealer + 1) % playersLeft;
             continue;
          }
       }
@@ -483,6 +486,7 @@ int server::gameLoop() {
                playerWon(i, getPot());
             }
          }
+         dealer = (dealer + 1) % playersLeft;
          continue;
       }
 
@@ -614,7 +618,7 @@ int server::bettingRound(int n) {
    int success = -1;
    int turn = n;
 
-   while(getPlayersInHand() > 1 && count < playersLeft) {
+   while(count < playersLeft && getPlayersNotFolded() > 1) { //TODO
       success = 0;
       if(!player[turn].hasFolded() && !player[turn].isAllin()) {
          // empty socket, only latest action counts
@@ -632,6 +636,15 @@ int server::bettingRound(int n) {
          count++;
    }
    return 0;
+}
+
+int server::getPlayersNotFolded() {
+   int c = playersLeft;
+   for(int i = 0; i < playersLeft; i++)
+      if(player[i].hasFolded())
+         c--;
+
+   return c;
 }
 
 int server::clear(int8_t n) {

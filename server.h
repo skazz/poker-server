@@ -60,6 +60,8 @@ private:
 
    int getPlayersAllin();
 
+   int getPlayersNotFolded();
+
    int showdown();
 
    CLog log;
